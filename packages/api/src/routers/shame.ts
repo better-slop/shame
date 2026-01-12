@@ -563,8 +563,8 @@ const orgRouter = router({
           };
         }),
         totals: {
-          enforcements: enforcementTotal[0]?.count ?? 0,
-          reports: globalReportTotal[0]?.count ?? 0,
+          enforcements: Number(enforcementTotal[0]?.count ?? 0),
+          reports: Number(globalReportTotal[0]?.count ?? 0),
           recommendedActions: recommendedActorDetails.length,
         },
       };

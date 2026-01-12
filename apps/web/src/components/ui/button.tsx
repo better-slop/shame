@@ -19,7 +19,7 @@ const buttonVariants = cva(
           "bg-destructive/10 hover:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/20 text-destructive focus-visible:border-destructive/40 dark:hover:bg-destructive/30",
         link: "text-primary underline-offset-4 hover:underline",
         medieval:
-          "relative bg-shame-blood border-2 border-shame-gold rounded-[2px] text-xl text-shame-parchment font-medium font-display tracking-[0.1em] lowercase text-xl! shadow-[0_15px_40px_-8px_var(--shame-gold)] [text-shadow:0_1px_0_rgba(0,0,0,0.3),0_1px_1px_rgba(0,0,0,0.2)] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:border-y-[8px] before:border-l-[8px] before:border-y-transparent before:border-l-shame-gold before:opacity-0 before:transition-opacity after:absolute after:right-0 after:top-1/2 after:-translate-y-1/2 after:border-y-[8px] after:border-r-[8px] after:border-y-transparent after:border-r-shame-gold after:opacity-0 after:transition-opacity hover:before:opacity-100 hover:after:opacity-100 focus-visible:before:opacity-1md focus-visible:after:opacity-100",
+          "relative bg-shame-blood border-2 border-shame-gold rounded-[2px] text-xl text-shame-parchment font-medium tracking-[0.1em] uppercase text-xl! shadow-[0_15px_40px_-8px_var(--shame-gold)] [text-shadow:0_1px_0_rgba(0,0,0,0.3),0_1px_1px_rgba(0,0,0,0.2)] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:border-y-[8px] before:border-l-[8px] before:border-y-transparent before:border-l-shame-gold before:opacity-0 before:transition-opacity after:absolute after:right-0 after:top-1/2 after:-translate-y-1/2 after:border-y-[8px] after:border-r-[8px] after:border-y-transparent after:border-r-shame-gold after:opacity-0 after:transition-opacity hover:before:opacity-100 hover:after:opacity-100 focus-visible:before:opacity-1md focus-visible:after:opacity-100",
       },
       size: {
         default:
@@ -27,7 +27,7 @@ const buttonVariants = cva(
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
-        xl: "h-12 gap-2.5 px-5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3 text-md",
+        xl: "h-12 gap-2.5 px-4 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3 text-md",
         icon: "size-8",
         "icon-xs":
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",

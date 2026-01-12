@@ -5,6 +5,7 @@ import { TheWall, type ShameEntry } from "@/components/the-wall";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
 import { GithubIcon } from "@/components/icons/github";
+import { GateAnimation } from "@/components/gate-animation";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -76,6 +77,13 @@ function LandingPage() {
           </div>
         </div>
       </header>
+
+      {/* Gate Animation */}
+      <section className="py-16 md:py-24 bg-card overflow-hidden">
+        <div className="container mx-auto max-w-5xl px-4">
+          <GateAnimation />
+        </div>
+      </section>
 
       {/* How it works */}
       <section className="py-16 md:py-24 bg-card">
