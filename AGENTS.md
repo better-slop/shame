@@ -18,6 +18,7 @@ Basic ideas:
 5. Configurable rules for what constitutes a ban in YOUR organization/repo - do we autoban if they have 1, 2, or 3 bans in other repos?
 6. Browser extension that adds a "ban" next to users' names on PRs, issues, comments, etc.
 7. TUI that automatically recognizes that you are in a gh pr checkout XXX and then shows the PR author's name. Allows you to browse through PRs, issues, ban lists, etc. Out of scope for now
+8. Authorized users can add/remove/edit/delete bans (have option to pull list of maintainers from GitHub)
 
 Tech (bun@1.3.5 monorepo):
 
