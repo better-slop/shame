@@ -14,6 +14,8 @@ const buttonVariants = cva(
         ghost: "hover:bg-muted hover:text-foreground dark:hover:bg-muted/50 aria-expanded:bg-muted aria-expanded:text-foreground",
         destructive: "bg-destructive/10 hover:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/20 text-destructive focus-visible:border-destructive/40 dark:hover:bg-destructive/30",
         link: "text-primary underline-offset-4 hover:underline",
+        medieval:
+          "relative bg-[#2a1c0c] border-2 border-amber-600 rounded-[2px] text-gray-200 font-bold tracking-[0.1em] uppercase shadow-[0_15px_40px_-8px_rgba(193,133,0,0.5)] [text-shadow:0_1px_0_rgba(0,0,0,0.3),0_1px_1px_rgba(0,0,0,0.2)] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:border-y-[8px] before:border-l-[8px] before:border-y-transparent before:border-l-amber-600 before:opacity-0 before:transition-opacity after:absolute after:right-0 after:top-1/2 after:-translate-y-1/2 after:border-y-[8px] after:border-r-[8px] after:border-y-transparent after:border-r-amber-600 after:opacity-0 after:transition-opacity hover:before:opacity-100 hover:after:opacity-100 focus-visible:before:opacity-100 focus-visible:after:opacity-100",
       },
       size: {
         default: "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
