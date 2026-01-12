@@ -2,6 +2,20 @@ import { Link, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 type NavItem = {
   label: string;
@@ -69,59 +83,59 @@ type DashboardLayoutProps = {
   user?: User | null;
 };
 
-function Sidebar() {
+function AppSidebar() {
   const location = useLocation();
 
   return (
-    <aside className="w-56 border-r border-border bg-card flex flex-col">
-      {/* Logo */}
-      <div className="h-14 flex items-center px-4 border-b border-border">
-        <Link to="/" className="flex items-center gap-2 text-foreground hover:text-shame-crimson transition-instant">
-          <div className="size-7 bg-shame-crimson/10 border border-shame-crimson/20 flex items-center justify-center">
-            <span className="font-display text-xs text-shame-crimson">bs</span>
-          </div>
-          <span className="font-display text-base tracking-wide">bs-shame</span>
-        </Link>
-      </div>
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" render={<Link to="/" />}>
+              <div className="size-8 bg-shame-crimson/10 border border-shame-crimson/20 flex items-center justify-center">
+                <span className="font-display text-sm text-shame-crimson">bs</span>
+              </div>
+              <span className="font-display text-base tracking-wide">bs-shame</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1">
-        {NAV_ITEMS.map((item) => {
-          const isActive = location.pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-instant ${
-                isActive
-                  ? "bg-accent/10 text-accent border-l-2 border-accent -ml-px"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {NAV_ITEMS.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    render={<Link to={item.href} />}
+                    isActive={location.pathname === item.href}
+                    tooltip={item.label}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
 
-      {/* Footer */}
-      <div className="p-3 border-t border-border">
+      <SidebarFooter>
         <ThemeSwitcher />
-      </div>
-    </aside>
+      </SidebarFooter>
+    </Sidebar>
   );
 }
 
 function TopBar({ user }: { user?: User | null }) {
   return (
-    <header className="h-14 border-b border-border bg-card flex items-center justify-between px-6">
-      {/* Left - breadcrumb or page title could go here */}
-      <div />
+    <header className="h-14 border-b border-sidebar-border bg-sidebar flex items-center justify-between px-4">
+      <SidebarTrigger />
 
-      {/* Right - user info */}
       <div className="flex items-center gap-4">
-        {/* Notifications placeholder */}
+        {/* Notifications */}
         <button
           type="button"
           className="size-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-instant"
@@ -131,7 +145,7 @@ function TopBar({ user }: { user?: User | null }) {
           </svg>
         </button>
 
-        {/* User dropdown */}
+        {/* User */}
         <div className="flex items-center gap-2">
           {user?.image ? (
             <img src={user.image} alt="" className="size-8 ring-1 ring-border" />
@@ -148,14 +162,6 @@ function TopBar({ user }: { user?: User | null }) {
               {user?.email ?? ""}
             </p>
           </div>
-          <button
-            type="button"
-            className="ml-1 text-muted-foreground hover:text-foreground transition-instant"
-          >
-            <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
-          </button>
         </div>
       </div>
     </header>
@@ -164,14 +170,14 @@ function TopBar({ user }: { user?: User | null }) {
 
 export function DashboardLayout({ children, user }: DashboardLayoutProps) {
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
         <TopBar user={user} />
-        <main className="flex-1 overflow-auto p-6 bg-background">
+        <div className="flex-1 overflow-auto p-6">
           {children}
-        </main>
-      </div>
-    </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
