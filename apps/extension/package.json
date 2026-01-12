@@ -5,7 +5,7 @@
   "description": "manifest.json description",
   "type": "module",
   "scripts": {
-//    "dev": "wxt --port 5555",
+    "dev": "wxt --port 5555",
     "dev:firefox": "wxt -b firefox",
     "build": "wxt build",
     "build:firefox": "wxt build -b firefox",
