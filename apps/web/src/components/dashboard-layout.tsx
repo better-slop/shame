@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { useTheme, type Theme } from "@/components/theme-switcher";
 import {
@@ -136,6 +136,7 @@ function AppSidebar() {
 
 function TopBar({ user }: { user?: User | null }) {
   const { theme, setTheme } = useTheme();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const cycleTheme = () => {
     const order: Theme[] = ["light", "dark", "system"];
@@ -177,10 +178,9 @@ function TopBar({ user }: { user?: User | null }) {
         </button>
 
         {/* User dropdown */}
-        <DropdownMenu>
+        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
           <DropdownMenuTrigger
             className="flex items-center gap-2 outline-none focus:outline-none cursor-pointer"
-            render={<button type="button" />}
           >
             {user?.image ? (
               <img src={user.image} alt="" className="size-8 ring-1 ring-border" />
