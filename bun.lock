@@ -106,8 +106,8 @@
         "@bs-shame/auth": "workspace:*",
         "@bs-shame/env": "workspace:*",
         "@fontsource-variable/dm-sans": "^5.2.8",
-        "@fontsource/cinzel-decorative": "^5.2.8",
         "@fontsource/eagle-lake": "^5.2.7",
+        "@fontsource/jacquard-12": "^5.2.8",
         "@hugeicons/core-free-icons": "^3.1.1",
         "@hugeicons/react": "^1.1.4",
         "@libsql/client": "catalog:",
@@ -524,9 +524,9 @@
 
     "@fontsource-variable/dm-sans": ["@fontsource-variable/dm-sans@5.2.8", "", {}, "sha512-AxkvMTvNWgfrmlyjiV05vlHYJa+nRQCf1EfvIrQAPBpFJW0O9VTz7oAFr9S3lvbWdmnFoBk7yFqQL86u64nl2g=="],
 
-    "@fontsource/cinzel-decorative": ["@fontsource/cinzel-decorative@5.2.8", "", {}, "sha512-BtrvcprcCd0DyAcIXZRohfMyh+n/MwNvmhmAZ0kXDe9T1w2XSOodb3RNoD1uHm3TlGw7fjTU0YepgAQbPW0sFw=="],
-
     "@fontsource/eagle-lake": ["@fontsource/eagle-lake@5.2.7", "", {}, "sha512-KFUW0Lg4SHwtdfZ6rO9+X3GSJMswv0JCTC9zAIARX94/Tl0gj+DNPPMjbgXIiq1xRjpaMrogiITNzKD1JYpTjA=="],
+
+    "@fontsource/jacquard-12": ["@fontsource/jacquard-12@5.2.8", "", {}, "sha512-Mbs9CR1UMst2lCpK2uFx86nvJtrgCjCxsQZy8Qmtf8ppL2StqbXA9Lr04iVj734o58m6+ftoeHENhU2uAJmt/g=="],
 
     "@formatjs/fast-memoize": ["@formatjs/fast-memoize@3.0.3", "", { "dependencies": { "tslib": "^2.8.0" } }, "sha512-CArYtQKGLAOruCMeq5/RxCg6vUXFx3OuKBdTm30Wn/+gCefehmZ8Y2xSMxMrO2iel7hRyE3HKfV56t3vAU6D4Q=="],
 
