@@ -60,23 +60,15 @@ function LandingPage() {
             <div className="text-center space-y-6">
               <h1 className="text-shame-crimson">The Wall of Shame</h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-                Crowdsourced accountability for those who blindly toss AI slop
-                over the wall onto maintainers without a nanosecond of thought.
+                Crowdsourced accountability for those who blindly toss AI slop over the wall onto
+                maintainers without a nanosecond of thought.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                <Button
-                  variant="medieval"
-                  size="lg"
-                  className="gap-2 text-base px-6"
-                >
+                <Button variant="medieval" size="lg" className="gap-2 text-base px-6">
                   <GithubIcon className="size-5" />
                   Install on GitHub
                 </Button>
-                <Button
-                  variant="medieval"
-                  size="xl"
-                  className="text-base px-6 -bg-linear-180"
-                >
+                <Button variant="medieval" size="xl" className="text-base px-6 -bg-linear-180">
                   View The Wall
                 </Button>
               </div>
@@ -96,8 +88,8 @@ function LandingPage() {
               </div>
               <h3 className="text-lg font-display">Install Once</h3>
               <p className="text-sm text-muted-foreground">
-                Add bs-shame to your org or repo with one click. It watches for
-                known bad actors automatically.
+                Add bs-shame to your org or repo with one click. It watches for known bad actors
+                automatically.
               </p>
             </div>
             <div className="text-center space-y-3">
@@ -106,8 +98,8 @@ function LandingPage() {
               </div>
               <h3 className="text-lg font-display">Report Offenders</h3>
               <p className="text-sm text-muted-foreground">
-                When someone submits AI slop, report them. Their name goes on
-                the crowdsourced list with evidence.
+                When someone submits AI slop, report them. Their name goes on the crowdsourced list
+                with evidence.
               </p>
             </div>
             <div className="text-center space-y-3">
@@ -116,8 +108,8 @@ function LandingPage() {
               </div>
               <h3 className="text-lg font-display">Auto-Protection</h3>
               <p className="text-sm text-muted-foreground">
-                Repeat offenders get flagged, then banned across all
-                participating repos. Three strikes, you're out.
+                Repeat offenders get flagged, then banned across all participating repos. Three
+                strikes, you're out.
               </p>
             </div>
           </div>
@@ -130,8 +122,7 @@ function LandingPage() {
           <div className="text-center mb-12">
             <h2 className="mb-4">The Wall</h2>
             <p className="text-muted-foreground">
-              A monument to those who couldn't be bothered to think for a
-              nanosecond.
+              A monument to those who couldn't be bothered to think for a nanosecond.
             </p>
           </div>
           <TheWall entries={MOCK_ENTRIES} />
@@ -143,8 +134,8 @@ function LandingPage() {
         <div className="container mx-auto max-w-2xl px-4 text-center space-y-6">
           <h2>Protect Your Repos</h2>
           <p className="text-muted-foreground">
-            Join the network. One install protects you from the entire
-            crowdsourced list of bad actors.
+            Join the network. One install protects you from the entire crowdsourced list of bad
+            actors.
           </p>
           <Button variant="medieval" size="lg" className="gap-2 text-base px-6">
             <GithubIcon className="size-5" />

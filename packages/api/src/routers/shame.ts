@@ -119,7 +119,11 @@ async function getEffectivePolicyInternal(
       flagAt: repoPolicy.flagAt,
       banAt: repoPolicy.banAt,
       orgPolicy: projectPolicySafe(orgPolicy ?? null),
-      repoPolicy: { mode: repoPolicy.mode, flagAt: repoPolicy.flagAt, banAt: repoPolicy.banAt },
+      repoPolicy: {
+        mode: repoPolicy.mode,
+        flagAt: repoPolicy.flagAt,
+        banAt: repoPolicy.banAt,
+      },
     };
   }
 
@@ -130,7 +134,11 @@ async function getEffectivePolicyInternal(
     banAt: effectiveOrg.banAt,
     orgPolicy: projectPolicySafe(orgPolicy ?? null),
     repoPolicy: repoPolicy
-      ? { mode: repoPolicy.mode, flagAt: repoPolicy.flagAt, banAt: repoPolicy.banAt }
+      ? {
+          mode: repoPolicy.mode,
+          flagAt: repoPolicy.flagAt,
+          banAt: repoPolicy.banAt,
+        }
       : null,
   };
 }
