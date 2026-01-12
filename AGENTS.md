@@ -55,8 +55,5 @@ Tooling:
 
 Domain:
 
-- better-shame.com
-
-# DB schema for shame
-
-##
+- https://shame.bot - on prod branch
+- https://dev.shame.bot - on tip (dev branch)
