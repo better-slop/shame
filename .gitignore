@@ -48,3 +48,6 @@ coverage
 .cache
 tmp
 temp
+**/PLAN.md
+**/TODO.md
+.ignore
