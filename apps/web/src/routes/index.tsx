@@ -66,7 +66,7 @@ function LandingPage() {
                   </svg>
                   Install on GitHub
                 </Button>
-                <Button variant="medieval" size="lg" className="text-base px-6">
+                <Button variant="medieval" size="lg" className="text-base px-6 -bg-linear-180">
                   View The Wall
                 </Button>
               </div>
