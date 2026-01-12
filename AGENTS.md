@@ -1,4 +1,3 @@
-
 In response to a Tweet by Mitchell Hashimoto, we want to build a platform that installs an application into your GitHub repo or organization, that addresses the following issue:
 
 > The people who just blindly toss AI shit over a wall onto other humans without using their brain for even a nanosecond deserve shaming. We need to start a public wall of shame for the public identities (not doxing) of these people so we can have bots that just block them.
@@ -20,27 +19,34 @@ Basic ideas:
 6. Browser extension that adds a "ban" next to users' names on PRs, issues, comments, etc.
 7. TUI that automatically recognizes that you are in a gh pr checkout XXX and then shows the PR author's name. Allows you to browse through PRs, issues, ban lists, etc. Out of scope for now
 
-Tech:
+Tech (bun@1.3.5 monorepo):
 
-- Cloudflare Workers
-- Alchemy.run (see how I did this in ~/cau1k/caulk.lol/alchemy.run.ts with automated deployments)
-  - only change is having a dev branch and a prod branch
-  - also, this is in @packages/infra
-- Tanstack Start for frontend/authentication
-- Better-Auth for authentication on D1
-- Hono API
-- Effect.ts - fully effectful
-- Durable workflows/jobs somehow
-- bun monorepo
-  - packages/extension (chrome extension that communicates with the api - out of scope for now)
-  - packages/auth (reusable better-auth server/client paradigm)
-  - packages/db (d1 adapter)
-    - exports:
-      - @bs-shame/db/auth - d1 solely for better-auth
-      - @bs-shame/db/crowd - d1 solely for the reports/etc
-  - apps/api (hono)
-  - apps/web (tanstack)
-- oxc
-  - linter (type aware linting with oxlint-tsgolint; see https://oxc.rs/blog/2025-12-08-type-aware-alpha.html)
-  - formatter (with prettier)
+Apps:
 
+- apps/web - TanStack Start (React 19, Router, Query), Vite 7, Tailwind v4, shadcn/Base UI
+- apps/server - Hono + tRPC + Better-Auth
+- apps/extension - WXT browser extension (out of scope)
+- apps/tui - Terminal UI (out of scope)
+- apps/fumadocs - Documentation site
+
+Packages:
+
+- @bs-shame/api - tRPC API layer with Drizzle
+- @bs-shame/auth - Better-Auth wrapper
+- @bs-shame/db - Drizzle ORM with libsql/Turso
+- @bs-shame/env - Environment config (Zod validated)
+- @bs-shame/config - Shared TypeScript/tooling config
+- @bs-shame/infra - Alchemy deployment orchestration
+  - we need to setup automatic deployments for this (see ~/cau1k/caulk.lol/alchemy.run.ts)
+
+Infra:
+
+- Alchemy for Cloudflare deployments (dev/prod branches)
+- Wrangler for local dev and CF integration
+- Turso/libsql for database
+
+Tooling:
+
+- oxlint + oxfmt
+- TypeScript 5
+- Drizzle Kit for migrations
