@@ -209,15 +209,19 @@ async function findActorByIdOrLogin(
   }
 
   if (login) {
-    // First try current login
+    const normalizedLogin = login.trim().toLowerCase();
+    if (!normalizedLogin) return null;
+
+    // First try current login (case-insensitive)
     let actor = await db.query.shameActor.findFirst({
-      where: eq(shameActor.login, login),
+      where: sql`lower(${shameActor.login}) = ${normalizedLogin}`,
     });
     if (actor) return actor;
 
-    // Check historical logins
+    // Check historical logins (case-insensitive, most recent)
     const historicalLogin = await db.query.shameActorLogin.findFirst({
-      where: eq(shameActorLogin.login, login),
+      where: sql`lower(${shameActorLogin.login}) = ${normalizedLogin}`,
+      orderBy: desc(shameActorLogin.lastSeenAt),
     });
     if (historicalLogin) {
       actor = await db.query.shameActor.findFirst({
@@ -368,7 +372,7 @@ const actorRouter = router({
           latestReportAt: latestReport?.createdAt ?? null,
           topReasonCodes: reasonCodeCounts.slice(0, 5).map((r) => ({
             code: r.reasonCode,
-            count: r.count,
+            count: Number(r.count),
           })),
         },
         reports: reports.map((r) => ({
@@ -376,7 +380,7 @@ const actorRouter = router({
           evidences: evidenceByReport.get(r.report.id) ?? [],
         })),
         pagination: {
-          total: totalReports[0]?.count ?? 0,
+          total: Number(totalReports[0]?.count ?? 0),
           limit: input.reportLimit,
           offset: input.reportOffset,
         },
@@ -420,8 +424,10 @@ const orgRouter = router({
         enforcementConditions.push(eq(shameEnforcement.active, input.filters.active));
       }
 
-      // Load active enforcements
-      const [enforcements, enforcementTotal] = await Promise.all([
+      // Load enforcements for this scope (filters apply) + total count.
+      // Also fetch all actively-enforced actor ids (ignores filters) so we never
+      // recommend an actor already enforced on another page.
+      const [enforcements, enforcementTotal, activeEnforcedRows] = await Promise.all([
         db.query.shameEnforcement.findMany({
           where: and(...enforcementConditions),
           with: { actor: true },
@@ -433,10 +439,21 @@ const orgRouter = router({
           .select({ count: count() })
           .from(shameEnforcement)
           .where(and(...enforcementConditions)),
+        db
+          .select({ actorGithubUserId: shameEnforcement.actorGithubUserId })
+          .from(shameEnforcement)
+          .where(
+            and(
+              eq(shameEnforcement.scope, scope),
+              eq(shameEnforcement.scopeGithubId, scopeGithubId),
+              eq(shameEnforcement.active, true),
+            ),
+          ),
       ]);
 
-      // Find actors who meet thresholds but aren't yet enforced in this scope
-      const enforcedActorIds = enforcements.filter((e) => e.active).map((e) => e.actorGithubUserId);
+      const activeEnforcedActorIds = [
+        ...new Set(activeEnforcedRows.map((r) => r.actorGithubUserId)),
+      ];
 
       // Get actors with high occurrence counts (globally) who aren't enforced yet
       // Uses composite distinct to avoid org/repo ID collision
@@ -457,7 +474,7 @@ const orgRouter = router({
         );
 
       const recommendedActorIds = recommendedActors
-        .filter((r) => !enforcedActorIds.includes(r.actorGithubUserId))
+        .filter((r) => !activeEnforcedActorIds.includes(r.actorGithubUserId))
         .map((r) => r.actorGithubUserId);
 
       const recommendedActorDetails =
@@ -469,7 +486,7 @@ const orgRouter = router({
 
       // Global recent activity: reports for actors that affect this org's thresholds
       // (actors who are recommended or already enforced)
-      const relevantActorIds = [...new Set([...enforcedActorIds, ...recommendedActorIds])];
+      const relevantActorIds = [...new Set([...activeEnforcedActorIds, ...recommendedActorIds])];
 
       const [globalRecentReports, globalReportTotal] =
         relevantActorIds.length > 0
@@ -521,7 +538,7 @@ const orgRouter = router({
             ...projectEnforcementSafe(e),
             actor: e.actor,
           })),
-          total: enforcementTotal[0]?.count ?? 0,
+          total: Number(enforcementTotal[0]?.count ?? 0),
           page: input.page,
           pageSize: input.pageSize,
         },
