@@ -1,4 +1,5 @@
-import { and, count, countDistinct, desc, eq, or, sql } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
+import { and, count, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@bs-shame/db";
@@ -6,6 +7,7 @@ import {
   shameActor,
   shameActorLogin,
   shameEnforcement,
+  shameEvidence,
   shamePolicyOrg,
   shamePolicyRepo,
   shameReport,
@@ -19,14 +21,74 @@ const DEFAULT_POLICY = {
   banAt: 3,
 };
 
-type EffectivePolicy = {
-  source: "org" | "repo";
+type PolicyConfig = {
   mode: "manual" | "auto";
   flagAt: number;
   banAt: number;
-  orgPolicy: typeof shamePolicyOrg.$inferSelect | null;
-  repoPolicy: typeof shamePolicyRepo.$inferSelect | null;
 };
+
+type RepoPolicyConfig = {
+  mode: "inherit" | "manual" | "auto";
+  flagAt: number;
+  banAt: number;
+};
+
+type EffectivePolicy = {
+  source: "org" | "repo";
+  orgPolicy: PolicyConfig | null;
+  repoPolicy: RepoPolicyConfig | null;
+} & PolicyConfig;
+
+/**
+ * Projects only safe (non-audit) fields from a report row.
+ */
+function projectReportSafe(report: typeof shameReport.$inferSelect) {
+  return {
+    id: report.id,
+    scope: report.scope,
+    scopeGithubId: report.scopeGithubId,
+    scopeLogin: report.scopeLogin,
+    actorGithubUserId: report.actorGithubUserId,
+    actorLogin: report.actorLogin,
+    action: report.action,
+    reasonCode: report.reasonCode,
+    reasonText: report.reasonText,
+    createdAt: report.createdAt,
+  };
+}
+
+/**
+ * Projects only safe fields from an enforcement row.
+ */
+function projectEnforcementSafe(enforcement: typeof shameEnforcement.$inferSelect) {
+  return {
+    id: enforcement.id,
+    scope: enforcement.scope,
+    scopeGithubId: enforcement.scopeGithubId,
+    scopeLogin: enforcement.scopeLogin,
+    actorGithubUserId: enforcement.actorGithubUserId,
+    actorLogin: enforcement.actorLogin,
+    status: enforcement.status,
+    source: enforcement.source,
+    active: enforcement.active,
+    createdAt: enforcement.createdAt,
+    revokedAt: enforcement.revokedAt,
+  };
+}
+
+/**
+ * Projects only safe fields from a policy row.
+ */
+function projectPolicySafe(
+  policy: typeof shamePolicyOrg.$inferSelect | typeof shamePolicyRepo.$inferSelect | null,
+): PolicyConfig | null {
+  if (!policy) return null;
+  return {
+    mode: policy.mode as "manual" | "auto",
+    flagAt: policy.flagAt,
+    banAt: policy.banAt,
+  };
+}
 
 /**
  * Resolves effective policy for a scope (org or repo).
@@ -56,8 +118,8 @@ async function getEffectivePolicyInternal(
       mode: repoPolicy.mode,
       flagAt: repoPolicy.flagAt,
       banAt: repoPolicy.banAt,
-      orgPolicy: orgPolicy ?? null,
-      repoPolicy,
+      orgPolicy: projectPolicySafe(orgPolicy ?? null),
+      repoPolicy: { mode: repoPolicy.mode, flagAt: repoPolicy.flagAt, banAt: repoPolicy.banAt },
     };
   }
 
@@ -66,65 +128,47 @@ async function getEffectivePolicyInternal(
     mode: effectiveOrg.mode,
     flagAt: effectiveOrg.flagAt,
     banAt: effectiveOrg.banAt,
-    orgPolicy: orgPolicy ?? null,
-    repoPolicy: repoPolicy ?? null,
+    orgPolicy: projectPolicySafe(orgPolicy ?? null),
+    repoPolicy: repoPolicy
+      ? { mode: repoPolicy.mode, flagAt: repoPolicy.flagAt, banAt: repoPolicy.banAt }
+      : null,
   };
 }
 
 /**
  * Computes occurrence counts for an actor across all scopes.
+ * Uses COUNT(DISTINCT (scope, scope_github_id)) to avoid collision between org/repo IDs.
  */
 async function getActorOccurrenceCounts(actorGithubUserId: number) {
-  const [repoBans, orgBans, repoFlags, orgFlags] = await Promise.all([
-    db
-      .select({ count: countDistinct(shameReport.scopeGithubId) })
-      .from(shameReport)
-      .where(
-        and(
-          eq(shameReport.actorGithubUserId, actorGithubUserId),
-          eq(shameReport.scope, "repo"),
-          eq(shameReport.action, "ban"),
-        ),
+  const result = await db
+    .select({
+      repoBanOccurrences: sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.scope} = 'repo' AND ${shameReport.action} = 'ban' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`,
+      orgBanOccurrences: sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.scope} = 'org' AND ${shameReport.action} = 'ban' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`,
+      repoFlagOccurrences: sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.scope} = 'repo' AND ${shameReport.action} = 'flag' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`,
+      orgFlagOccurrences: sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.scope} = 'org' AND ${shameReport.action} = 'flag' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`,
+    })
+    .from(shameReport)
+    .where(
+      and(
+        eq(shameReport.actorGithubUserId, actorGithubUserId),
+        eq(shameReport.visibility, "public"),
       ),
-    db
-      .select({ count: countDistinct(shameReport.scopeGithubId) })
-      .from(shameReport)
-      .where(
-        and(
-          eq(shameReport.actorGithubUserId, actorGithubUserId),
-          eq(shameReport.scope, "org"),
-          eq(shameReport.action, "ban"),
-        ),
-      ),
-    db
-      .select({ count: countDistinct(shameReport.scopeGithubId) })
-      .from(shameReport)
-      .where(
-        and(
-          eq(shameReport.actorGithubUserId, actorGithubUserId),
-          eq(shameReport.scope, "repo"),
-          eq(shameReport.action, "flag"),
-        ),
-      ),
-    db
-      .select({ count: countDistinct(shameReport.scopeGithubId) })
-      .from(shameReport)
-      .where(
-        and(
-          eq(shameReport.actorGithubUserId, actorGithubUserId),
-          eq(shameReport.scope, "org"),
-          eq(shameReport.action, "flag"),
-        ),
-      ),
-  ]);
+    );
+
+  const r = result[0] ?? {
+    repoBanOccurrences: 0,
+    orgBanOccurrences: 0,
+    repoFlagOccurrences: 0,
+    orgFlagOccurrences: 0,
+  };
 
   return {
-    repoBanOccurrences: repoBans[0]?.count ?? 0,
-    orgBanOccurrences: orgBans[0]?.count ?? 0,
-    repoFlagOccurrences: repoFlags[0]?.count ?? 0,
-    orgFlagOccurrences: orgFlags[0]?.count ?? 0,
-    totalBanOccurrences: (repoBans[0]?.count ?? 0) + (orgBans[0]?.count ?? 0),
-    totalFlagOccurrences: (repoFlags[0]?.count ?? 0) + (orgFlags[0]?.count ?? 0),
+    repoBanOccurrences: Number(r.repoBanOccurrences),
+    orgBanOccurrences: Number(r.orgBanOccurrences),
+    repoFlagOccurrences: Number(r.repoFlagOccurrences),
+    orgFlagOccurrences: Number(r.orgFlagOccurrences),
+    totalBanOccurrences: Number(r.repoBanOccurrences) + Number(r.orgBanOccurrences),
+    totalFlagOccurrences: Number(r.repoFlagOccurrences) + Number(r.orgFlagOccurrences),
   };
 }
 
@@ -140,6 +184,42 @@ function meetsThresholds(
     shouldFlag: totalOccurrences >= policy.flagAt,
     shouldBan: counts.totalBanOccurrences >= policy.banAt,
   };
+}
+
+/**
+ * Finds an actor by githubUserId or login (including historical logins).
+ */
+async function findActorByIdOrLogin(
+  githubUserId?: number,
+  login?: string,
+): Promise<typeof shameActor.$inferSelect | null> {
+  if (githubUserId) {
+    const actor = await db.query.shameActor.findFirst({
+      where: eq(shameActor.githubUserId, githubUserId),
+    });
+    return actor ?? null;
+  }
+
+  if (login) {
+    // First try current login
+    let actor = await db.query.shameActor.findFirst({
+      where: eq(shameActor.login, login),
+    });
+    if (actor) return actor;
+
+    // Check historical logins
+    const historicalLogin = await db.query.shameActorLogin.findFirst({
+      where: eq(shameActorLogin.login, login),
+    });
+    if (historicalLogin) {
+      actor = await db.query.shameActor.findFirst({
+        where: eq(shameActor.githubUserId, historicalLogin.actorGithubUserId),
+      });
+      return actor ?? null;
+    }
+  }
+
+  return null;
 }
 
 const policyRouter = router({
@@ -173,46 +253,45 @@ const actorRouter = router({
     )
     .query(async ({ input }) => {
       if (!input.githubUserId && !input.login) {
-        throw new Error("Either githubUserId or login must be provided");
-      }
-
-      // Find actor
-      let actor: typeof shameActor.$inferSelect | undefined;
-      if (input.githubUserId) {
-        actor = await db.query.shameActor.findFirst({
-          where: eq(shameActor.githubUserId, input.githubUserId),
-        });
-      } else if (input.login) {
-        actor = await db.query.shameActor.findFirst({
-          where: eq(shameActor.login, input.login),
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Either githubUserId or login must be provided",
         });
       }
 
+      const actor = await findActorByIdOrLogin(input.githubUserId, input.login);
       if (!actor) {
         return null;
       }
 
-      // Load login history, reports with evidence, and counts in parallel
-      const [logins, reportsWithEvidence, counts, totalReports, latestReport, reasonCodeCounts] =
+      // Only fetch public reports
+      const publicReportCondition = and(
+        eq(shameReport.actorGithubUserId, actor.githubUserId),
+        eq(shameReport.visibility, "public"),
+      );
+
+      const [logins, reports, counts, totalReports, latestReport, reasonCodeCounts] =
         await Promise.all([
           db.query.shameActorLogin.findMany({
             where: eq(shameActorLogin.actorGithubUserId, actor.githubUserId),
             orderBy: desc(shameActorLogin.lastSeenAt),
           }),
-          db.query.shameReport.findMany({
-            where: eq(shameReport.actorGithubUserId, actor.githubUserId),
-            with: { evidences: true },
-            orderBy: desc(shameReport.createdAt),
-            limit: input.reportLimit,
-            offset: input.reportOffset,
-          }),
+          db
+            .select({
+              report: shameReport,
+            })
+            .from(shameReport)
+            .where(publicReportCondition)
+            .orderBy(desc(shameReport.createdAt))
+            .limit(input.reportLimit)
+            .offset(input.reportOffset),
           getActorOccurrenceCounts(actor.githubUserId),
           db
             .select({ count: count() })
             .from(shameReport)
-            .where(eq(shameReport.actorGithubUserId, actor.githubUserId)),
+            .where(publicReportCondition),
           db.query.shameReport.findFirst({
-            where: eq(shameReport.actorGithubUserId, actor.githubUserId),
+            where: publicReportCondition,
             orderBy: desc(shameReport.createdAt),
           }),
           db
@@ -221,16 +300,32 @@ const actorRouter = router({
               count: count(),
             })
             .from(shameReport)
-            .where(eq(shameReport.actorGithubUserId, actor.githubUserId))
+            .where(publicReportCondition)
             .groupBy(shameReport.reasonCode)
             .orderBy(desc(count())),
         ]);
+
+      // Fetch evidence for reports
+      const reportIds = reports.map((r) => r.report.id);
+      const evidences =
+        reportIds.length > 0
+          ? await db.query.shameEvidence.findMany({
+              where: inArray(shameEvidence.reportId, reportIds),
+            })
+          : [];
+
+      const evidenceByReport = new Map<string, (typeof evidences)[number][]>();
+      for (const e of evidences) {
+        const list = evidenceByReport.get(e.reportId) ?? [];
+        list.push(e);
+        evidenceByReport.set(e.reportId, list);
+      }
 
       // Viewer context: check thresholds and existing enforcement
       let viewerResult:
         | {
             meetsThresholds: { shouldFlag: boolean; shouldBan: boolean };
-            enforcement: typeof shameEnforcement.$inferSelect | null;
+            enforcement: ReturnType<typeof projectEnforcementSafe> | null;
             policy: EffectivePolicy;
           }
         | undefined;
@@ -255,7 +350,7 @@ const actorRouter = router({
 
         viewerResult = {
           meetsThresholds: meetsThresholds(counts, policy),
-          enforcement: enforcement ?? null,
+          enforcement: enforcement ? projectEnforcementSafe(enforcement) : null,
           policy,
         };
       }
@@ -271,7 +366,10 @@ const actorRouter = router({
             count: r.count,
           })),
         },
-        reports: reportsWithEvidence,
+        reports: reports.map((r) => ({
+          ...projectReportSafe(r.report),
+          evidences: evidenceByReport.get(r.report.id) ?? [],
+        })),
         pagination: {
           total: totalReports[0]?.count ?? 0,
           limit: input.reportLimit,
@@ -317,8 +415,8 @@ const orgRouter = router({
         enforcementConditions.push(eq(shameEnforcement.active, input.filters.active));
       }
 
-      // Load active enforcements and recent activity in parallel
-      const [enforcements, enforcementTotal, recentReports, reportTotal] = await Promise.all([
+      // Load active enforcements
+      const [enforcements, enforcementTotal] = await Promise.all([
         db.query.shameEnforcement.findMany({
           where: and(...enforcementConditions),
           with: { actor: true },
@@ -330,34 +428,6 @@ const orgRouter = router({
           .select({ count: count() })
           .from(shameEnforcement)
           .where(and(...enforcementConditions)),
-        db.query.shameReport.findMany({
-          where: or(
-            and(eq(shameReport.scope, "org"), eq(shameReport.scopeGithubId, input.githubOwnerId)),
-            input.githubRepoId
-              ? and(
-                  eq(shameReport.scope, "repo"),
-                  eq(shameReport.scopeGithubId, input.githubRepoId),
-                )
-              : undefined,
-          ),
-          with: { actor: true, evidences: true },
-          orderBy: desc(shameReport.createdAt),
-          limit: 10,
-        }),
-        db
-          .select({ count: count() })
-          .from(shameReport)
-          .where(
-            or(
-              and(eq(shameReport.scope, "org"), eq(shameReport.scopeGithubId, input.githubOwnerId)),
-              input.githubRepoId
-                ? and(
-                    eq(shameReport.scope, "repo"),
-                    eq(shameReport.scopeGithubId, input.githubRepoId),
-                  )
-                : undefined,
-            ),
-          ),
       ]);
 
       // Find actors who meet thresholds but aren't yet enforced in this scope
@@ -365,23 +435,21 @@ const orgRouter = router({
         .filter((e) => e.active)
         .map((e) => e.actorGithubUserId);
 
-      // Get actors with high occurrence counts who aren't enforced yet
+      // Get actors with high occurrence counts (globally) who aren't enforced yet
+      // Uses composite distinct to avoid org/repo ID collision
       const recommendedActors = await db
         .select({
           actorGithubUserId: shameReport.actorGithubUserId,
-          banCount: countDistinct(
-            sql`CASE WHEN ${shameReport.action} = 'ban' THEN ${shameReport.scopeGithubId} END`,
-          ),
-          flagCount: countDistinct(
-            sql`CASE WHEN ${shameReport.action} = 'flag' THEN ${shameReport.scopeGithubId} END`,
-          ),
+          banCount: sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.action} = 'ban' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`,
+          flagCount: sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.action} = 'flag' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`,
         })
         .from(shameReport)
+        .where(eq(shameReport.visibility, "public"))
         .groupBy(shameReport.actorGithubUserId)
         .having(
           or(
-            sql`${countDistinct(sql`CASE WHEN ${shameReport.action} = 'ban' THEN ${shameReport.scopeGithubId} END`)} >= ${policy.banAt}`,
-            sql`${countDistinct(shameReport.scopeGithubId)} >= ${policy.flagAt}`,
+            sql`COUNT(DISTINCT CASE WHEN ${shameReport.action} = 'ban' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END) >= ${policy.banAt}`,
+            sql`COUNT(DISTINCT ${shameReport.scope} || ':' || ${shameReport.scopeGithubId}) >= ${policy.flagAt}`,
           ),
         );
 
@@ -392,36 +460,91 @@ const orgRouter = router({
       const recommendedActorDetails =
         recommendedActorIds.length > 0
           ? await db.query.shameActor.findMany({
-              where: sql`${shameActor.githubUserId} IN (${sql.join(recommendedActorIds.map((id) => sql`${id}`), sql`, `)})`,
+              where: inArray(shameActor.githubUserId, recommendedActorIds),
             })
           : [];
+
+      // Global recent activity: reports for actors that affect this org's thresholds
+      // (actors who are recommended or already enforced)
+      const relevantActorIds = [...new Set([...enforcedActorIds, ...recommendedActorIds])];
+
+      const [globalRecentReports, globalReportTotal] =
+        relevantActorIds.length > 0
+          ? await Promise.all([
+              db
+                .select({ report: shameReport, actor: shameActor })
+                .from(shameReport)
+                .innerJoin(shameActor, eq(shameReport.actorGithubUserId, shameActor.githubUserId))
+                .where(
+                  and(
+                    inArray(shameReport.actorGithubUserId, relevantActorIds),
+                    eq(shameReport.visibility, "public"),
+                  ),
+                )
+                .orderBy(desc(shameReport.createdAt))
+                .limit(10),
+              db
+                .select({ count: count() })
+                .from(shameReport)
+                .where(
+                  and(
+                    inArray(shameReport.actorGithubUserId, relevantActorIds),
+                    eq(shameReport.visibility, "public"),
+                  ),
+                ),
+            ])
+          : [[], [{ count: 0 }]];
+
+      // Fetch evidence for recent reports
+      const recentReportIds = globalRecentReports.map((r) => r.report.id);
+      const recentEvidences =
+        recentReportIds.length > 0
+          ? await db.query.shameEvidence.findMany({
+              where: inArray(shameEvidence.reportId, recentReportIds),
+            })
+          : [];
+
+      const evidenceByReport = new Map<string, (typeof recentEvidences)[number][]>();
+      for (const e of recentEvidences) {
+        const list = evidenceByReport.get(e.reportId) ?? [];
+        list.push(e);
+        evidenceByReport.set(e.reportId, list);
+      }
 
       return {
         policy,
         enforcements: {
-          rows: enforcements,
+          rows: enforcements.map((e) => ({
+            ...projectEnforcementSafe(e),
+            actor: e.actor,
+          })),
           total: enforcementTotal[0]?.count ?? 0,
           page: input.page,
           pageSize: input.pageSize,
         },
         recentActivity: {
-          reports: recentReports,
-          totalReports: reportTotal[0]?.count ?? 0,
+          reports: globalRecentReports.map((r) => ({
+            ...projectReportSafe(r.report),
+            actor: r.actor,
+            evidences: evidenceByReport.get(r.report.id) ?? [],
+          })),
+          totalReports: globalReportTotal[0]?.count ?? 0,
         },
         recommendations: recommendedActorDetails.map((actor) => {
           const counts = recommendedActors.find((r) => r.actorGithubUserId === actor.githubUserId);
+          const banCount = Number(counts?.banCount ?? 0);
+          const flagCount = Number(counts?.flagCount ?? 0);
           return {
             actor,
-            banCount: counts?.banCount ?? 0,
-            flagCount: counts?.flagCount ?? 0,
-            shouldBan: (counts?.banCount ?? 0) >= policy.banAt,
-            shouldFlag:
-              ((counts?.banCount ?? 0) + (counts?.flagCount ?? 0)) >= policy.flagAt,
+            banCount,
+            flagCount,
+            shouldBan: banCount >= policy.banAt,
+            shouldFlag: banCount + flagCount >= policy.flagAt,
           };
         }),
         totals: {
           enforcements: enforcementTotal[0]?.count ?? 0,
-          reports: reportTotal[0]?.count ?? 0,
+          reports: globalReportTotal[0]?.count ?? 0,
           recommendedActions: recommendedActorDetails.length,
         },
       };
