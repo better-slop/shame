@@ -1,0 +1,24 @@
+{
+  "name": "@bs-shame/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@bs-shame/db": "workspace:*",
+    "@bs-shame/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@bs-shame/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

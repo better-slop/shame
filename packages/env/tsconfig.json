@@ -1,0 +1,3 @@
+{
+  "extends": "@bs-shame/config/tsconfig.base.json"
+}

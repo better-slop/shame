@@ -1,0 +1,27 @@
+{
+  "name": "@bs-shame/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@bs-shame/auth": "workspace:*",
+    "@bs-shame/db": "workspace:*",
+    "@bs-shame/env": "workspace:*",
+    "@trpc/client": "catalog:",
+    "@trpc/server": "catalog:",
+    "dotenv": "catalog:",
+    "drizzle-orm": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@bs-shame/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}
