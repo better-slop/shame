@@ -26,7 +26,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "My App",
+        title: "bs-shame | The Wall of Shame",
+      },
+      {
+        name: "description",
+        content: "Crowdsourced accountability for AI slop in open source. Install once, protect your repos forever.",
       },
     ],
     links: [

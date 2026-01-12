@@ -56,3 +56,7 @@ Tooling:
 Domain:
 
 - better-shame.com
+
+# DB schema for shame
+
+##

@@ -13,6 +13,7 @@
     "@bs-shame/auth": "workspace:*",
     "@bs-shame/env": "workspace:*",
     "@fontsource-variable/dm-sans": "^5.2.8",
+    "@fontsource/eagle-lake": "^5.2.7",
     "@hugeicons/core-free-icons": "^3.1.1",
     "@hugeicons/react": "^1.1.4",
     "@libsql/client": "catalog:",
@@ -31,7 +32,6 @@
     "clsx": "^2.1.1",
     "dotenv": "catalog:",
     "libsql": "catalog:",
-
     "next-themes": "^0.4.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
