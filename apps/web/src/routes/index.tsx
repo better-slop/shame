@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { TheWall, type ShameEntry } from "@/components/the-wall";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -50,7 +51,7 @@ function LandingPage() {
       {/* Hero */}
       <header className="relative overflow-hidden texture-parchment">
         <div className="medieval-border">
-          <div className="container mx-auto max-w-5xl px-4 py-20 md:py-32">
+          <div className="container mx-auto max-w-5xl px-4 pt-28 pb-20 md:pt-36 md:pb-32">
             <div className="text-center space-y-6">
               <h1 className="text-shame-crimson">
                 The Wall of Shame
@@ -144,17 +145,21 @@ function LandingPage() {
         <div className="container mx-auto max-w-5xl px-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p className="font-display">bs-shame</p>
-            <p>
-              Inspired by{" "}
-              <a
-                href="https://twitter.com/mitchellh"
-                className="text-foreground hover:text-shame-crimson transition-instant"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                @mitchellh
-              </a>
-            </p>
+            <div className="flex items-center gap-4">
+              <p>
+                Inspired by{" "}
+                <a
+                  href="https://twitter.com/mitchellh"
+                  className="text-foreground hover:text-shame-crimson transition-instant"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  @mitchellh
+                </a>
+              </p>
+              <span className="text-border">|</span>
+              <ThemeSwitcher />
+            </div>
           </div>
         </div>
       </footer>

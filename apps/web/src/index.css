@@ -40,7 +40,7 @@
     --chart-3: oklch(0.65 0.10 40);
     --chart-4: oklch(0.75 0.08 50);
     --chart-5: oklch(0.85 0.05 60);
-    --radius: 0.5rem;
+    --radius: 0px;
     --sidebar: oklch(0.93 0.02 80);
     --sidebar-foreground: oklch(0.25 0.04 50);
     --sidebar-primary: oklch(0.30 0.05 55);
@@ -177,8 +177,8 @@
 @layer components {
   /* Stone monument card for The Wall */
   .stone-card {
-    @apply relative bg-card border border-border rounded-sm;
-    @apply before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/5 before:to-black/10 before:pointer-events-none before:rounded-sm;
+    @apply relative bg-card border border-border;
+    @apply before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/5 before:to-black/10 before:pointer-events-none;
     box-shadow: 
       inset 0 1px 0 0 oklch(1 0 0 / 8%),
       inset 0 -1px 0 0 oklch(0 0 0 / 15%),
@@ -188,7 +188,7 @@
   /* Shame badge - the red mark of dishonor */
   .shame-badge {
     @apply inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium;
-    @apply bg-shame-crimson/15 text-shame-crimson border border-shame-crimson/30 rounded-sm;
+    @apply bg-shame-crimson/15 text-shame-crimson border border-shame-crimson/30;
   }
   
   /* Medieval decorative border */
@@ -200,7 +200,7 @@
   
   /* Pillory icon container */
   .pillory-icon {
-    @apply flex items-center justify-center size-10 rounded-full;
+    @apply flex items-center justify-center size-10;
     @apply bg-shame-crimson/10 text-shame-crimson;
   }
 }
