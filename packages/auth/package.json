@@ -10,7 +10,7 @@
     }
   },
   "scripts": {
-    "auth:generate": "bunx @better-auth/cli@latest generate --input ./src/index.ts --output ../db/src/schema/auth.ts"
+    "auth:generate": "dotenv -e ../../apps/server/.env -- bunx @better-auth/cli@latest generate --config ./auth.config.ts --output ../db/src/schema/auth.ts -y"
   },
   "dependencies": {
     "@bs-shame/db": "workspace:*",
@@ -21,6 +21,8 @@
   },
   "devDependencies": {
     "@bs-shame/config": "workspace:*",
+    "@libsql/client": "catalog:",
+    "drizzle-orm": "catalog:",
     "typescript": "catalog:"
   }
 }

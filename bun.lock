@@ -182,6 +182,8 @@
       },
       "devDependencies": {
         "@bs-shame/config": "workspace:*",
+        "@libsql/client": "catalog:",
+        "drizzle-orm": "catalog:",
         "typescript": "catalog:",
       },
     },
