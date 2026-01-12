@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 export type Theme = "light" | "dark" | "system";
 
@@ -9,41 +9,46 @@ function getSystemTheme(): "light" | "dark" {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-function getStoredTheme(): Theme {
-  if (typeof window === "undefined") return "system";
-  return (localStorage.getItem("theme") as Theme) || "system";
-}
-
 function applyTheme(theme: Theme) {
+  if (typeof document === "undefined") return;
   const resolved = theme === "system" ? getSystemTheme() : theme;
   document.documentElement.classList.toggle("dark", resolved === "dark");
 }
 
+function subscribe(callback: () => void) {
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  mediaQuery.addEventListener("change", callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    mediaQuery.removeEventListener("change", callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+function getSnapshot(): Theme {
+  return (localStorage.getItem("theme") as Theme) || "system";
+}
+
+function getServerSnapshot(): Theme {
+  return "system";
+}
+
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>("system");
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const stored = getStoredTheme();
-    setThemeState(stored);
-    applyTheme(stored);
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = () => {
-      if (getStoredTheme() === "system") {
-        applyTheme("system");
-      }
-    };
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
+    setMounted(true);
+    applyTheme(theme);
+  }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
     localStorage.setItem("theme", newTheme);
     applyTheme(newTheme);
+    window.dispatchEvent(new Event("storage"));
   };
 
-  return { theme, setTheme };
+  return { theme: mounted ? theme : "system", setTheme, mounted };
 }
 
 const THEMES: { value: Theme; label: string }[] = [
@@ -53,7 +58,19 @@ const THEMES: { value: Theme; label: string }[] = [
 ];
 
 export function ThemeSwitcher() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, mounted } = useTheme();
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center gap-1 text-xs">
+        {THEMES.map(({ value, label }) => (
+          <span key={value} className="px-2 py-1 text-muted-foreground">
+            {label}
+          </span>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-1 text-xs">
