@@ -548,7 +548,7 @@ const orgRouter = router({
             actor: r.actor,
             evidences: evidenceByReport.get(r.report.id) ?? [],
           })),
-          totalReports: globalReportTotal[0]?.count ?? 0,
+          totalReports: Number(globalReportTotal[0]?.count ?? 0),
         },
         recommendations: recommendedActorDetails.map((actor) => {
           const counts = recommendedActors.find((r) => r.actorGithubUserId === actor.githubUserId);
