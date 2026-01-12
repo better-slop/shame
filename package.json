@@ -24,6 +24,7 @@
   },
   "type": "module",
   "scripts": {
+    "auth:generate": "bun run --filter @bs-shame/auth auth:generate",
     "dev": "bun run --filter '*' dev",
     "build": "bun run --filter '*' build",
     "check-types": "bun run --filter '*' check-types",
