@@ -1,0 +1,13 @@
+name: Lint
+
+on:
+  pull_request:
+
+jobs:
+  oxlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Oxlint Action
+        uses: oxc-project/oxlint-action@v3.0.0
