@@ -286,10 +286,7 @@ const actorRouter = router({
             .limit(input.reportLimit)
             .offset(input.reportOffset),
           getActorOccurrenceCounts(actor.githubUserId),
-          db
-            .select({ count: count() })
-            .from(shameReport)
-            .where(publicReportCondition),
+          db.select({ count: count() }).from(shameReport).where(publicReportCondition),
           db.query.shameReport.findFirst({
             where: publicReportCondition,
             orderBy: desc(shameReport.createdAt),
@@ -431,9 +428,7 @@ const orgRouter = router({
       ]);
 
       // Find actors who meet thresholds but aren't yet enforced in this scope
-      const enforcedActorIds = enforcements
-        .filter((e) => e.active)
-        .map((e) => e.actorGithubUserId);
+      const enforcedActorIds = enforcements.filter((e) => e.active).map((e) => e.actorGithubUserId);
 
       // Get actors with high occurrence counts (globally) who aren't enforced yet
       // Uses composite distinct to avoid org/repo ID collision

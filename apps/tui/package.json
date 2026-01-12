@@ -4,7 +4,7 @@
   "type": "module",
   "module": "src/index.tsx",
   "scripts": {
-//    "dev": "bun run --watch src/index.tsx"
+    "dev:old": "bun run --watch src/index.tsx"
   },
   "dependencies": {
     "@opentui/core": "^0.1.72",

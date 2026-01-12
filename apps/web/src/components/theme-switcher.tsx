@@ -80,9 +80,7 @@ export function ThemeSwitcher() {
           type="button"
           onClick={() => setTheme(value)}
           className={`px-2 py-1 transition-instant ${
-            theme === value
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground"
+            theme === value ? "text-foreground" : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {label}

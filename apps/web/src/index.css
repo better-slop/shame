@@ -7,142 +7,142 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-    /* Medieval Parchment - Light Theme */
-    --background: oklch(0.95 0.02 85);
-    --foreground: oklch(0.25 0.04 50);
-    --card: oklch(0.97 0.015 80);
-    --card-foreground: oklch(0.25 0.04 50);
-    --popover: oklch(0.97 0.015 80);
-    --popover-foreground: oklch(0.25 0.04 50);
-    --primary: oklch(0.30 0.05 55);
-    --primary-foreground: oklch(0.95 0.02 85);
-    --secondary: oklch(0.90 0.02 80);
-    --secondary-foreground: oklch(0.30 0.05 55);
-    --muted: oklch(0.92 0.015 75);
-    --muted-foreground: oklch(0.45 0.04 50);
-    --accent: oklch(0.35 0.12 25);
-    --accent-foreground: oklch(0.95 0.02 85);
-    --destructive: oklch(0.45 0.20 25);
-    --border: oklch(0.80 0.03 70);
-    --input: oklch(0.85 0.02 75);
-    --ring: oklch(0.45 0.04 50);
-    
-    /* Shame-specific colors */
-    --shame-crimson: oklch(0.45 0.20 25);
-    --shame-blood: oklch(0.35 0.18 25);
-    --shame-gold: oklch(0.75 0.12 85);
-    --shame-ink: oklch(0.25 0.04 50);
-    --shame-parchment: oklch(0.95 0.02 85);
-    --shame-stone: oklch(0.55 0.02 60);
-    
-    --chart-1: oklch(0.45 0.20 25);
-    --chart-2: oklch(0.55 0.15 30);
-    --chart-3: oklch(0.65 0.10 40);
-    --chart-4: oklch(0.75 0.08 50);
-    --chart-5: oklch(0.85 0.05 60);
-    --radius: 0px;
-    --sidebar: oklch(0.93 0.02 80);
-    --sidebar-foreground: oklch(0.25 0.04 50);
-    --sidebar-primary: oklch(0.30 0.05 55);
-    --sidebar-primary-foreground: oklch(0.95 0.02 85);
-    --sidebar-accent: oklch(0.45 0.20 25);
-    --sidebar-accent-foreground: oklch(0.95 0.02 85);
-    --sidebar-border: oklch(0.80 0.03 70);
-    --sidebar-ring: oklch(0.45 0.04 50);
+  /* Medieval Parchment - Light Theme */
+  --background: oklch(0.95 0.02 85);
+  --foreground: oklch(0.25 0.04 50);
+  --card: oklch(0.97 0.015 80);
+  --card-foreground: oklch(0.25 0.04 50);
+  --popover: oklch(0.97 0.015 80);
+  --popover-foreground: oklch(0.25 0.04 50);
+  --primary: oklch(0.3 0.05 55);
+  --primary-foreground: oklch(0.95 0.02 85);
+  --secondary: oklch(0.9 0.02 80);
+  --secondary-foreground: oklch(0.3 0.05 55);
+  --muted: oklch(0.92 0.015 75);
+  --muted-foreground: oklch(0.45 0.04 50);
+  --accent: oklch(0.35 0.12 25);
+  --accent-foreground: oklch(0.95 0.02 85);
+  --destructive: oklch(0.45 0.2 25);
+  --border: oklch(0.8 0.03 70);
+  --input: oklch(0.85 0.02 75);
+  --ring: oklch(0.45 0.04 50);
+
+  /* Shame-specific colors */
+  --shame-crimson: oklch(0.45 0.2 25);
+  --shame-blood: oklch(0.35 0.18 25);
+  --shame-gold: oklch(0.75 0.12 85);
+  --shame-ink: oklch(0.25 0.04 50);
+  --shame-parchment: oklch(0.95 0.02 85);
+  --shame-stone: oklch(0.55 0.02 60);
+
+  --chart-1: oklch(0.45 0.2 25);
+  --chart-2: oklch(0.55 0.15 30);
+  --chart-3: oklch(0.65 0.1 40);
+  --chart-4: oklch(0.75 0.08 50);
+  --chart-5: oklch(0.85 0.05 60);
+  --radius: 0px;
+  --sidebar: oklch(0.93 0.02 80);
+  --sidebar-foreground: oklch(0.25 0.04 50);
+  --sidebar-primary: oklch(0.3 0.05 55);
+  --sidebar-primary-foreground: oklch(0.95 0.02 85);
+  --sidebar-accent: oklch(0.45 0.2 25);
+  --sidebar-accent-foreground: oklch(0.95 0.02 85);
+  --sidebar-border: oklch(0.8 0.03 70);
+  --sidebar-ring: oklch(0.45 0.04 50);
 }
 
 .dark {
-    /* Aged Leather - Dark Theme */
-    --background: oklch(0.15 0.03 45);
-    --foreground: oklch(0.92 0.02 85);
-    --card: oklch(0.20 0.035 45);
-    --card-foreground: oklch(0.92 0.02 85);
-    --popover: oklch(0.20 0.035 45);
-    --popover-foreground: oklch(0.92 0.02 85);
-    --primary: oklch(0.92 0.02 85);
-    --primary-foreground: oklch(0.15 0.03 45);
-    --secondary: oklch(0.25 0.03 45);
-    --secondary-foreground: oklch(0.90 0.02 80);
-    --muted: oklch(0.25 0.025 50);
-    --muted-foreground: oklch(0.65 0.03 60);
-    --accent: oklch(0.50 0.18 25);
-    --accent-foreground: oklch(0.95 0.02 85);
-    --destructive: oklch(0.55 0.22 25);
-    --border: oklch(1 0 0 / 12%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.65 0.03 60);
-    
-    /* Shame-specific colors - Dark */
-    --shame-crimson: oklch(0.50 0.18 25);
-    --shame-blood: oklch(0.40 0.20 25);
-    --shame-gold: oklch(0.70 0.14 85);
-    --shame-ink: oklch(0.92 0.02 85);
-    --shame-parchment: oklch(0.20 0.035 45);
-    --shame-stone: oklch(0.40 0.02 55);
-    
-    --chart-1: oklch(0.55 0.22 25);
-    --chart-2: oklch(0.60 0.18 30);
-    --chart-3: oklch(0.65 0.12 40);
-    --chart-4: oklch(0.70 0.08 50);
-    --chart-5: oklch(0.75 0.05 60);
-    --sidebar: oklch(0.20 0.035 45);
-    --sidebar-foreground: oklch(0.92 0.02 85);
-    --sidebar-primary: oklch(0.92 0.02 85);
-    --sidebar-primary-foreground: oklch(0.15 0.03 45);
-    --sidebar-accent: oklch(0.50 0.18 25);
-    --sidebar-accent-foreground: oklch(0.95 0.02 85);
-    --sidebar-border: oklch(1 0 0 / 12%);
-    --sidebar-ring: oklch(0.65 0.03 60);
+  /* Aged Leather - Dark Theme */
+  --background: oklch(0.15 0.03 45);
+  --foreground: oklch(0.92 0.02 85);
+  --card: oklch(0.2 0.035 45);
+  --card-foreground: oklch(0.92 0.02 85);
+  --popover: oklch(0.2 0.035 45);
+  --popover-foreground: oklch(0.92 0.02 85);
+  --primary: oklch(0.92 0.02 85);
+  --primary-foreground: oklch(0.15 0.03 45);
+  --secondary: oklch(0.25 0.03 45);
+  --secondary-foreground: oklch(0.9 0.02 80);
+  --muted: oklch(0.25 0.025 50);
+  --muted-foreground: oklch(0.65 0.03 60);
+  --accent: oklch(0.5 0.18 25);
+  --accent-foreground: oklch(0.95 0.02 85);
+  --destructive: oklch(0.55 0.22 25);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.65 0.03 60);
+
+  /* Shame-specific colors - Dark */
+  --shame-crimson: oklch(0.5 0.18 25);
+  --shame-blood: oklch(0.4 0.2 25);
+  --shame-gold: oklch(0.7 0.14 85);
+  --shame-ink: oklch(0.92 0.02 85);
+  --shame-parchment: oklch(0.2 0.035 45);
+  --shame-stone: oklch(0.4 0.02 55);
+
+  --chart-1: oklch(0.55 0.22 25);
+  --chart-2: oklch(0.6 0.18 30);
+  --chart-3: oklch(0.65 0.12 40);
+  --chart-4: oklch(0.7 0.08 50);
+  --chart-5: oklch(0.75 0.05 60);
+  --sidebar: oklch(0.2 0.035 45);
+  --sidebar-foreground: oklch(0.92 0.02 85);
+  --sidebar-primary: oklch(0.92 0.02 85);
+  --sidebar-primary-foreground: oklch(0.15 0.03 45);
+  --sidebar-accent: oklch(0.5 0.18 25);
+  --sidebar-accent-foreground: oklch(0.95 0.02 85);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.65 0.03 60);
 }
 
 @theme inline {
-    --font-sans: 'DM Sans Variable', 'DM Sans', system-ui, sans-serif;
-    --font-display: 'Cinzel Decorative', 'Times New Roman', serif;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    /* Shame colors */
-    --color-shame-crimson: var(--shame-crimson);
-    --color-shame-blood: var(--shame-blood);
-    --color-shame-gold: var(--shame-gold);
-    --color-shame-ink: var(--shame-ink);
-    --color-shame-parchment: var(--shame-parchment);
-    --color-shame-stone: var(--shame-stone);
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
-    --radius-2xl: calc(var(--radius) + 8px);
-    --radius-3xl: calc(var(--radius) + 12px);
-    --radius-4xl: calc(var(--radius) + 16px);
+  --font-sans: "DM Sans Variable", "DM Sans", system-ui, sans-serif;
+  --font-display: "Cinzel Decorative", "Times New Roman", serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  /* Shame colors */
+  --color-shame-crimson: var(--shame-crimson);
+  --color-shame-blood: var(--shame-blood);
+  --color-shame-gold: var(--shame-gold);
+  --color-shame-ink: var(--shame-ink);
+  --color-shame-parchment: var(--shame-parchment);
+  --color-shame-stone: var(--shame-stone);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
 }
 
 @layer base {
@@ -155,20 +155,22 @@
   html {
     @apply font-sans;
   }
-  
+
   /* Typography scale */
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     @apply font-display tracking-wide;
   }
-  
+
   h1 {
     @apply text-4xl md:text-5xl lg:text-6xl;
   }
-  
+
   h2 {
     @apply text-2xl md:text-3xl lg:text-4xl;
   }
-  
+
   h3 {
     @apply text-xl md:text-2xl;
   }
@@ -179,25 +181,25 @@
   .stone-card {
     @apply relative bg-card border border-border;
     @apply before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/5 before:to-black/10 before:pointer-events-none;
-    box-shadow: 
+    box-shadow:
       inset 0 1px 0 0 oklch(1 0 0 / 8%),
       inset 0 -1px 0 0 oklch(0 0 0 / 15%),
       0 4px 12px -2px oklch(0 0 0 / 20%);
   }
-  
+
   /* Shame badge - the red mark of dishonor */
   .shame-badge {
     @apply inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium;
     @apply bg-shame-crimson/15 text-shame-crimson border border-shame-crimson/30;
   }
-  
+
   /* Medieval decorative border */
   .medieval-border {
     @apply relative;
     @apply before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-border before:to-transparent;
     @apply after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-border after:to-transparent;
   }
-  
+
   /* Pillory icon container */
   .pillory-icon {
     @apply flex items-center justify-center size-10;
@@ -210,7 +212,7 @@
   .texture-parchment {
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
   }
-  
+
   /* Smooth instant transitions for minimal motion */
   .transition-instant {
     @apply transition-colors duration-75;

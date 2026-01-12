@@ -103,9 +103,7 @@
       "indexes": {
         "account_userId_idx": {
           "name": "account_userId_idx",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -114,12 +112,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -192,16 +186,12 @@
       "indexes": {
         "session_token_unique": {
           "name": "session_token_unique",
-          "columns": [
-            "token"
-          ],
+          "columns": ["token"],
           "isUnique": true
         },
         "session_userId_idx": {
           "name": "session_userId_idx",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -210,12 +200,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -283,9 +269,7 @@
       "indexes": {
         "user_email_unique": {
           "name": "user_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "isUnique": true
         }
       },
@@ -345,9 +329,7 @@
       "indexes": {
         "verification_identifier_idx": {
           "name": "verification_identifier_idx",
-          "columns": [
-            "identifier"
-          ],
+          "columns": ["identifier"],
           "isUnique": false
         }
       },
@@ -454,9 +436,7 @@
       "indexes": {
         "shame_actor_login_idx": {
           "name": "shame_actor_login_idx",
-          "columns": [
-            "login"
-          ],
+          "columns": ["login"],
           "isUnique": false
         }
       },
@@ -502,16 +482,12 @@
       "indexes": {
         "shame_actor_login_actor_idx": {
           "name": "shame_actor_login_actor_idx",
-          "columns": [
-            "actor_github_user_id"
-          ],
+          "columns": ["actor_github_user_id"],
           "isUnique": false
         },
         "shame_actor_login_login_idx": {
           "name": "shame_actor_login_login_idx",
-          "columns": [
-            "login"
-          ],
+          "columns": ["login"],
           "isUnique": false
         }
       },
@@ -520,22 +496,15 @@
           "name": "shame_actor_login_actor_github_user_id_shame_actor_github_user_id_fk",
           "tableFrom": "shame_actor_login",
           "tableTo": "shame_actor",
-          "columnsFrom": [
-            "actor_github_user_id"
-          ],
-          "columnsTo": [
-            "github_user_id"
-          ],
+          "columnsFrom": ["actor_github_user_id"],
+          "columnsTo": ["github_user_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "shame_actor_login_actor_github_user_id_login_pk": {
-          "columns": [
-            "actor_github_user_id",
-            "login"
-          ],
+          "columns": ["actor_github_user_id", "login"],
           "name": "shame_actor_login_actor_github_user_id_login_pk"
         }
       },
@@ -651,33 +620,22 @@
       "indexes": {
         "shame_enforcement_scope_actor_unq": {
           "name": "shame_enforcement_scope_actor_unq",
-          "columns": [
-            "scope",
-            "scope_github_id",
-            "actor_github_user_id"
-          ],
+          "columns": ["scope", "scope_github_id", "actor_github_user_id"],
           "isUnique": true
         },
         "shame_enforcement_actor_idx": {
           "name": "shame_enforcement_actor_idx",
-          "columns": [
-            "actor_github_user_id"
-          ],
+          "columns": ["actor_github_user_id"],
           "isUnique": false
         },
         "shame_enforcement_scope_idx": {
           "name": "shame_enforcement_scope_idx",
-          "columns": [
-            "scope",
-            "scope_github_id"
-          ],
+          "columns": ["scope", "scope_github_id"],
           "isUnique": false
         },
         "shame_enforcement_active_idx": {
           "name": "shame_enforcement_active_idx",
-          "columns": [
-            "active"
-          ],
+          "columns": ["active"],
           "isUnique": false
         }
       },
@@ -686,12 +644,8 @@
           "name": "shame_enforcement_actor_github_user_id_shame_actor_github_user_id_fk",
           "tableFrom": "shame_enforcement",
           "tableTo": "shame_actor",
-          "columnsFrom": [
-            "actor_github_user_id"
-          ],
-          "columnsTo": [
-            "github_user_id"
-          ],
+          "columnsFrom": ["actor_github_user_id"],
+          "columnsTo": ["github_user_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -699,12 +653,8 @@
           "name": "shame_enforcement_created_by_user_id_user_id_fk",
           "tableFrom": "shame_enforcement",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -712,12 +662,8 @@
           "name": "shame_enforcement_revoked_by_user_id_user_id_fk",
           "tableFrom": "shame_enforcement",
           "tableTo": "user",
-          "columnsFrom": [
-            "revoked_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["revoked_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -798,16 +744,12 @@
       "indexes": {
         "shame_evidence_report_idx": {
           "name": "shame_evidence_report_idx",
-          "columns": [
-            "report_id"
-          ],
+          "columns": ["report_id"],
           "isUnique": false
         },
         "shame_evidence_repo_idx": {
           "name": "shame_evidence_repo_idx",
-          "columns": [
-            "github_repo_id"
-          ],
+          "columns": ["github_repo_id"],
           "isUnique": false
         }
       },
@@ -816,12 +758,8 @@
           "name": "shame_evidence_report_id_shame_report_id_fk",
           "tableFrom": "shame_evidence",
           "tableTo": "shame_report",
-          "columnsFrom": [
-            "report_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["report_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -891,9 +829,7 @@
       "indexes": {
         "shame_policy_org_mode_idx": {
           "name": "shame_policy_org_mode_idx",
-          "columns": [
-            "mode"
-          ],
+          "columns": ["mode"],
           "isUnique": false
         }
       },
@@ -902,12 +838,8 @@
           "name": "shame_policy_org_created_by_user_id_user_id_fk",
           "tableFrom": "shame_policy_org",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -984,16 +916,12 @@
       "indexes": {
         "shame_policy_repo_owner_idx": {
           "name": "shame_policy_repo_owner_idx",
-          "columns": [
-            "github_owner_id"
-          ],
+          "columns": ["github_owner_id"],
           "isUnique": false
         },
         "shame_policy_repo_mode_idx": {
           "name": "shame_policy_repo_mode_idx",
-          "columns": [
-            "mode"
-          ],
+          "columns": ["mode"],
           "isUnique": false
         }
       },
@@ -1002,12 +930,8 @@
           "name": "shame_policy_repo_created_by_user_id_user_id_fk",
           "tableFrom": "shame_policy_repo",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1117,33 +1041,22 @@
       "indexes": {
         "shame_report_scope_actor_unq": {
           "name": "shame_report_scope_actor_unq",
-          "columns": [
-            "scope",
-            "scope_github_id",
-            "actor_github_user_id"
-          ],
+          "columns": ["scope", "scope_github_id", "actor_github_user_id"],
           "isUnique": true
         },
         "shame_report_actor_idx": {
           "name": "shame_report_actor_idx",
-          "columns": [
-            "actor_github_user_id"
-          ],
+          "columns": ["actor_github_user_id"],
           "isUnique": false
         },
         "shame_report_scope_idx": {
           "name": "shame_report_scope_idx",
-          "columns": [
-            "scope",
-            "scope_github_id"
-          ],
+          "columns": ["scope", "scope_github_id"],
           "isUnique": false
         },
         "shame_report_created_at_idx": {
           "name": "shame_report_created_at_idx",
-          "columns": [
-            "created_at"
-          ],
+          "columns": ["created_at"],
           "isUnique": false
         }
       },
@@ -1152,12 +1065,8 @@
           "name": "shame_report_actor_github_user_id_shame_actor_github_user_id_fk",
           "tableFrom": "shame_report",
           "tableTo": "shame_actor",
-          "columnsFrom": [
-            "actor_github_user_id"
-          ],
-          "columnsTo": [
-            "github_user_id"
-          ],
+          "columnsFrom": ["actor_github_user_id"],
+          "columnsTo": ["github_user_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1165,12 +1074,8 @@
           "name": "shame_report_created_by_user_id_user_id_fk",
           "tableFrom": "shame_report",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

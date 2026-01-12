@@ -65,9 +65,7 @@ export const shameActorLogin = sqliteTable(
       .notNull()
       .references(() => shameActor.githubUserId, { onDelete: "cascade" }),
     login: text("login").notNull(),
-    firstSeenAt: integer("first_seen_at", { mode: "timestamp_ms" })
-      .default(msNow)
-      .notNull(),
+    firstSeenAt: integer("first_seen_at", { mode: "timestamp_ms" }).default(msNow).notNull(),
     lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" })
       .default(msNow)
       .$onUpdate(() => /* @__PURE__ */ new Date())
@@ -94,9 +92,7 @@ export const shameReport = sqliteTable(
     action: text("action", { enum: shameReportActionEnum }).notNull(),
     reasonCode: text("reason_code", { enum: shameReasonCodeEnum }).notNull(),
     reasonText: text("reason_text"),
-    visibility: text("visibility", { enum: shameVisibilityEnum })
-      .notNull()
-      .default("public"),
+    visibility: text("visibility", { enum: shameVisibilityEnum }).notNull().default("public"),
     createdByUserId: text("created_by_user_id").references(() => user.id),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).default(msNow).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" })
@@ -187,9 +183,7 @@ export const shameEnforcement = sqliteTable(
       .references(() => shameActor.githubUserId, { onDelete: "cascade" }),
     actorLogin: text("actor_login").notNull(),
     status: text("status", { enum: shameEnforcementStatusEnum }).notNull(),
-    source: text("source", { enum: shameEnforcementSourceEnum })
-      .notNull()
-      .default("manual"),
+    source: text("source", { enum: shameEnforcementSourceEnum }).notNull().default("manual"),
     active: integer("active", { mode: "boolean" }).notNull().default(true),
     createdByUserId: text("created_by_user_id").references(() => user.id),
     revokedByUserId: text("revoked_by_user_id").references(() => user.id),

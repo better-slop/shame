@@ -6,7 +6,10 @@ export default function Header() {
       <div className="container mx-auto max-w-5xl px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 text-foreground hover:text-shame-crimson transition-instant">
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-foreground hover:text-shame-crimson transition-instant"
+          >
             <div className="size-8 rounded bg-shame-crimson/10 border border-shame-crimson/20 flex items-center justify-center">
               <span className="font-display text-sm text-shame-crimson">bs</span>
             </div>
@@ -26,7 +29,11 @@ export default function Header() {
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+              />
             </svg>
           </Link>
         </div>

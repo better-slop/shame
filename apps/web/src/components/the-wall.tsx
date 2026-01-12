@@ -70,9 +70,7 @@ function ShameEntryCard({ entry }: { entry: ShameEntry }) {
           )}
           <div>
             <StoneCardTitle>{entry.username}</StoneCardTitle>
-            <StoneCardMeta>
-              First reported {formatDate(entry.firstReported)}
-            </StoneCardMeta>
+            <StoneCardMeta>First reported {formatDate(entry.firstReported)}</StoneCardMeta>
           </div>
         </div>
         <ShameBadge count={entry.reportCount}>
@@ -156,7 +154,8 @@ export function TheWall({ entries, isLoading }: TheWallProps) {
         </div>
         <h3 className="font-display text-xl mb-2">The Wall Stands Empty</h3>
         <p className="text-muted-foreground text-sm max-w-md mx-auto">
-          No bad actors have been reported yet. Install bs-shame on your repos to start building the crowdsourced list.
+          No bad actors have been reported yet. Install bs-shame on your repos to start building the
+          crowdsourced list.
         </p>
       </div>
     );
