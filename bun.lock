@@ -106,6 +106,7 @@
         "@bs-shame/auth": "workspace:*",
         "@bs-shame/env": "workspace:*",
         "@fontsource-variable/dm-sans": "^5.2.8",
+        "@fontsource/cinzel-decorative": "^5.2.8",
         "@fontsource/eagle-lake": "^5.2.7",
         "@hugeicons/core-free-icons": "^3.1.1",
         "@hugeicons/react": "^1.1.4",
@@ -522,6 +523,8 @@
     "@floating-ui/utils": ["@floating-ui/utils@0.2.10", "", {}, "sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ=="],
 
     "@fontsource-variable/dm-sans": ["@fontsource-variable/dm-sans@5.2.8", "", {}, "sha512-AxkvMTvNWgfrmlyjiV05vlHYJa+nRQCf1EfvIrQAPBpFJW0O9VTz7oAFr9S3lvbWdmnFoBk7yFqQL86u64nl2g=="],
+
+    "@fontsource/cinzel-decorative": ["@fontsource/cinzel-decorative@5.2.8", "", {}, "sha512-BtrvcprcCd0DyAcIXZRohfMyh+n/MwNvmhmAZ0kXDe9T1w2XSOodb3RNoD1uHm3TlGw7fjTU0YepgAQbPW0sFw=="],
 
     "@fontsource/eagle-lake": ["@fontsource/eagle-lake@5.2.7", "", {}, "sha512-KFUW0Lg4SHwtdfZ6rO9+X3GSJMswv0JCTC9zAIARX94/Tl0gj+DNPPMjbgXIiq1xRjpaMrogiITNzKD1JYpTjA=="],
 
