@@ -11,7 +11,7 @@ function LoginPage() {
   const handleGitHubSignIn = () => {
     authClient.signIn.social({
       provider: "github",
-      callbackURL: "/dashboard",
+      callbackURL: `${window.location.origin}/dashboard`,
     });
   };
 
