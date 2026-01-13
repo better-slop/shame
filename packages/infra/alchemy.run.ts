@@ -8,9 +8,13 @@ import {
 import { GitHubSecret, RepositoryEnvironment } from "alchemy/github";
 import { config } from "dotenv";
 
+const stage = process.env.STAGE ?? process.env.USER;
+
+// Load stage-specific env first (higher priority), then base .env
+if (stage === "dev" || stage === "prod") {
+  config({ path: `./.env.${stage}` });
+}
 config({ path: "./.env" });
-config({ path: "../../apps/web/.env" });
-config({ path: "../../apps/server/.env" });
 
 const requireValue = <T>(value: T | undefined, name: string): T => {
   if (value === undefined) {
@@ -19,11 +23,7 @@ const requireValue = <T>(value: T | undefined, name: string): T => {
   return value;
 };
 
-const app = await alchemy("bs-shame", {
-  stage: process.env.STAGE ?? process.env.USER,
-});
-
-const stage = app.stage;
+const app = await alchemy("bs-shame", { stage });
 const isProd = stage === "prod";
 const isDev = stage === "dev";
 
