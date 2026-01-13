@@ -111,7 +111,10 @@ function DashboardSettingsPage() {
             <section className="bg-card border border-border p-6">
               <h2 className="text-lg font-display mb-4">Organization Policy</h2>
               <div className="grid gap-4 sm:grid-cols-3">
-                <PolicyField label="Mode" value={MODE_LABELS[data.orgPolicy.mode] ?? data.orgPolicy.mode} />
+                <PolicyField
+                  label="Mode"
+                  value={MODE_LABELS[data.orgPolicy.mode] ?? data.orgPolicy.mode}
+                />
                 <PolicyField label="Flag At" value={`${data.orgPolicy.flagAt} reports`} />
                 <PolicyField label="Ban At" value={`${data.orgPolicy.banAt} reports`} />
               </div>
@@ -124,7 +127,10 @@ function DashboardSettingsPage() {
               <h2 className="text-lg font-display mb-4">Repository Override</h2>
               {data.repoPolicy ? (
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <PolicyField label="Mode" value={MODE_LABELS[data.repoPolicy.mode] ?? data.repoPolicy.mode} />
+                  <PolicyField
+                    label="Mode"
+                    value={MODE_LABELS[data.repoPolicy.mode] ?? data.repoPolicy.mode}
+                  />
                   <PolicyField label="Flag At" value={`${data.repoPolicy.flagAt} reports`} />
                   <PolicyField label="Ban At" value={`${data.repoPolicy.banAt} reports`} />
                 </div>

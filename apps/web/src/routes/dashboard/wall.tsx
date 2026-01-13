@@ -220,11 +220,7 @@ function DashboardWallPage() {
                   >
                     <div className="flex items-center gap-2">
                       {row.actor.avatarUrl && (
-                        <img
-                          src={row.actor.avatarUrl}
-                          alt=""
-                          className="size-6 rounded-full"
-                        />
+                        <img src={row.actor.avatarUrl} alt="" className="size-6 rounded-full" />
                       )}
                       <Link
                         to="/wall/$login"

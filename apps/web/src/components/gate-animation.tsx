@@ -81,11 +81,7 @@ export function GateAnimation() {
       <div className="archway">
         <div className="arch-stones">
           {Array.from({ length: 9 }).map((_, i) => (
-            <div
-              key={i}
-              className="arch-stone"
-              style={{ "--i": i } as React.CSSProperties}
-            />
+            <div key={i} className="arch-stone" style={{ "--i": i } as React.CSSProperties} />
           ))}
         </div>
         <div className="keystone">
@@ -173,12 +169,7 @@ export function GateAnimation() {
             fill="none"
             strokeWidth="2"
           />
-          <path
-            d="M100 0 L100 20 L95 30"
-            stroke="currentColor"
-            fill="none"
-            strokeWidth="2"
-          />
+          <path d="M100 0 L100 20 L95 30" stroke="currentColor" fill="none" strokeWidth="2" />
         </svg>
       </div>
 

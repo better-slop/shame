@@ -163,9 +163,7 @@ function ActorDetailPage() {
                   {severityLevel.toUpperCase()}
                 </ShameBadge>
               </div>
-              {actor.displayName && (
-                <p className="text-muted-foreground">{actor.displayName}</p>
-              )}
+              {actor.displayName && <p className="text-muted-foreground">{actor.displayName}</p>}
               <a
                 href={actor.profileUrl ?? `https://github.com/${actor.login}`}
                 target="_blank"
@@ -298,7 +296,10 @@ function Header() {
       <div className="medieval-border">
         <div className="container mx-auto max-w-4xl px-4 py-6">
           <div className="flex items-center justify-between">
-            <Link to="/" className="font-display text-xl hover:text-shame-crimson transition-instant">
+            <Link
+              to="/"
+              className="font-display text-xl hover:text-shame-crimson transition-instant"
+            >
               bs-shame
             </Link>
             <div className="flex items-center gap-4">

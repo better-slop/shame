@@ -22,7 +22,10 @@ function WallPage() {
         <div className="medieval-border">
           <div className="container mx-auto max-w-5xl px-4 py-12">
             <div className="flex items-center justify-between">
-              <Link to="/" className="font-display text-xl hover:text-shame-crimson transition-instant">
+              <Link
+                to="/"
+                className="font-display text-xl hover:text-shame-crimson transition-instant"
+              >
                 bs-shame
               </Link>
               <div className="flex items-center gap-4">
@@ -43,8 +46,8 @@ function WallPage() {
           <div className="text-center mb-12">
             <h1 className="text-shame-crimson mb-4">The Wall of Shame</h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              A monument to those who couldn't be bothered to think for a nanosecond before
-              dumping AI slop on maintainers.
+              A monument to those who couldn't be bothered to think for a nanosecond before dumping
+              AI slop on maintainers.
             </p>
           </div>
 

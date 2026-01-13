@@ -86,9 +86,7 @@ function projectEnforcementSafe(enforcement: typeof shameEnforcement.$inferSelec
 /**
  * Projects only safe fields from a policy row.
  */
-function projectPolicySafe(
-  policy: typeof shamePolicyOrg.$inferSelect | null,
-): PolicyConfig | null {
+function projectPolicySafe(policy: typeof shamePolicyOrg.$inferSelect | null): PolicyConfig | null {
   if (!policy) return null;
   return {
     mode: policy.mode,
