@@ -42,6 +42,7 @@ await app.finalize();
 | Bucket                 | R2 object storage buckets          | [bucket.md](references/bucket.md)                                     |
 | BucketObject           | R2 bucket objects                  | [bucket-object.md](references/bucket-object.md)                       |
 | Assets                 | Static asset serving               | [assets.md](references/assets.md)                                     |
+| Website                | Static website hosting             | [website.md](references/website.md)                                   |
 | Route                  | URL pattern to Worker mapping      | [route.md](references/route.md)                                       |
 | CustomDomain           | Attach domains to Workers          | [custom-domain.md](references/custom-domain.md)                       |
 | Zone                   | DNS zone management                | [zone.md](references/zone.md)                                         |
