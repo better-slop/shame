@@ -38,7 +38,7 @@ Packages:
 - @bs-shame/env - Environment config (Zod validated)
 - @bs-shame/config - Shared TypeScript/tooling config
 - @bs-shame/infra - Alchemy deployment orchestration
-  - we need to setup automatic deployments for @bs-shame/{web|server|fumadocs} (see ~/cau1k/caulk.lol/alchemy.run.ts):
+  - we need to setup ci deployments for @bs-shame/{web|server|fumadocs}:
     - @bs-shame/web - deploy to
 
 Infra:
