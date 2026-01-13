@@ -47,6 +47,8 @@ await app.finalize();
 | Zone | DNS zone management | [zone.md](references/zone.md) |
 | DnsRecords | Manage DNS records | [dns-records.md](references/dns-records.md) |
 | TanStackStart | Deploy TanStack Start apps to CF | [tanstack-start.md](references/tanstack-start.md) |
+| Vite | Deploy Vite apps to CF | [vite.md](references/vite.md) |
+| VersionMetadata | Access worker version info | [version-metadata.md](references/version-metadata.md) |
 | Secret | Worker secrets management | [secret.md](references/secret.md) |
 | SecretKey | Cryptographic key generation | [secret-key.md](references/secret-key.md) |
 | SecretsStore | Centralized secrets storage | [secrets-store.md](references/secrets-store.md) |
