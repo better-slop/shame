@@ -51,3 +51,6 @@ temp
 **/PLAN.md
 **/TODO.md
 .ignore
+.env
+.env.dev
+.env.prod
