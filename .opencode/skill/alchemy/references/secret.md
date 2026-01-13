@@ -1,108 +1,93 @@
 ---
 title: Secret
-description: Learn how to add individual secrets to Cloudflare Secrets Store for fine-grained secret management.
+description: Learn how to safely handle API keys, passwords and credentials.
+sidebar:
+  order: 0.3
 ---
 
-A [Cloudflare Secret](https://developers.cloudflare.com/api/resources/secrets_store/subresources/stores/subresources/secrets/) creates an individual secret stored in a [Secrets Store](/providers/cloudflare/secrets-store). If you want to reference an existing Secrets Store secret that was not created using Alchemy, use `SecretRef`.
+Alchemy provides built-in mechanisms for handling sensitive data securely. This guide explains how to manage secrets in your Alchemy resources.
 
-## Basic Usage
+## What are Secrets?
 
-```ts
-import { Secret } from "alchemy/cloudflare";
+Secrets in Alchemy are sensitive values that need special handling to prevent exposure in logs, state files, or source code. Examples include:
 
-const mySecret = await Secret("my-secret", {
-  value: alchemy.secret(process.env.MY_SECRET),
-});
-```
+- API keys and tokens
+- Passwords and credentials
+- Private certificates
+- Connection strings with credentials
 
-:::tip
-This will auto-create a Secrets Store, `default_secrets_store` if one does not exist. Cloudflare's UI does the same.
-:::
+## Encryption Password
 
-Then bind the Secret to your Worker:
+Secrets are encrypted using a password that you provide when initializing your Alchemy app:
 
-```ts
-export const worker = await Worker("worker", {
-  bindings: {
-    MY_SECRET: mySecret,
-  },
-});
-```
-
-And use it at runtime:
-
-```ts
-import type { worker } from "../alchemy.run.ts";
-
-export default {
-  async fetch(request, env: typeof worker.Env) {
-    const secret = await env.MY_SECRET.get();
-
-    // ..
-  },
-};
-```
-
-## Referencing an Existing Secret (SecretRef)
-
-Use `SecretRef` to bind an existing secret by name without creating or updating its value.
-
-```ts
-import { SecretRef, Worker } from "alchemy/cloudflare";
-
-const apiKeyRef = await SecretRef({ name: "API_KEY" });
-
-const worker = await Worker("worker", {
-  bindings: {
-    API_KEY: apiKeyRef,
-  },
-  entrypoint: "./src/worker.ts",
-  url: true,
-});
-```
-
-At runtime, it behaves the same:
-
-```ts
-export default {
-  async fetch(request, env) {
-    const key = await env.API_KEY.get();
-    return new Response(key ? "ok" : "missing");
-  }
-};
-```
-
-## Custom Secrets Store
-
-By default, the `default_secrets_store` will be used, but you can also specify your own store.
-
-```ts
-import { Secret, SecretsStore } from "alchemy/cloudflare";
-
-const store = await SecretsStore("my-store");
-
-const mySecret = await Secret("my-secret", {
-  store,
-  value: alchemy.secret(process.env.MY_SECRET),
-});
-```
-
-Or, if the secret already exists, reference it with `SecretRef` and pass the store explicitly:
-
-```ts
-import { SecretRef, SecretsStore, Worker } from "alchemy/cloudflare";
-
-const store = await SecretsStore("my-store", {
-  name: "production-secrets",
-  adopt: true,
-});
-
-const apiKeyRef = await SecretRef({
-  name: "API_KEY",
-  store,
+```typescript
+const app = await alchemy("my-app", {
+  stage: "dev",
+  password: process.env.SECRET_PASSPHRASE,
 });
 ```
 
 :::caution
-During the Beta, Cloudflare does not support more than one [SecretsStore](/providers/cloudflare/secrets-store) per account, so you should instead rely on the default behavior until then.
+Always store your encryption password securely and never commit it to source control.
 :::
+
+## Using the alchemy.secret() Function
+
+The primary way to handle secrets in Alchemy is with the `alchemy.secret()` function:
+
+```typescript
+// Create a secret from an environment variable
+const apiKey = alchemy.secret(process.env.API_KEY);
+```
+
+When a secret is stored in state, it is automatically encrypted:
+
+```json
+{
+  "props": {
+    "key": {
+      "@secret": "Tgz3e/WAscu4U1oanm5S4YXH..."
+    }
+  }
+}
+```
+
+## Using Secrets in Resources
+
+Secrets can be passed to resources like Cloudflare Workers. First, define your worker script:
+
+```typescript
+// worker-script.ts
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    
+    if (url.pathname.startsWith('/env/')) {
+      const varName = url.pathname.split('/env/')[1];
+      const value = env[varName];
+      return new Response(value || 'undefined', { 
+        status: 200,
+        headers: { 'Content-Type': 'text/plain' }
+      });
+    }
+    
+    return new Response('Secret is safe: ' + env.API_KEY, { status: 200 });
+  }
+};
+```
+
+Then use the script and bind the secrets:
+
+```typescript
+// Use the script with secrets
+const worker = await Worker("multi-secret-worker", {
+  name: "multi-secret-worker",
+  script: workerScript,
+  format: "esm",
+  bindings: {
+    API_KEY: alchemy.secret(process.env.API_KEY),
+    DATABASE_URL: alchemy.secret(process.env.DATABASE_URL),
+    JWT_SECRET: alchemy.secret(process.env.JWT_SECRET)
+  }
+});
+```
