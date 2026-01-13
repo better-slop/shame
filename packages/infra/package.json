@@ -14,6 +14,7 @@
   "devDependencies": {
     "@bs-shame/config": "workspace:*",
     "alchemy": "catalog:",
+    "tsx": "^4.21.0",
     "typescript": "catalog:"
   }
 }
