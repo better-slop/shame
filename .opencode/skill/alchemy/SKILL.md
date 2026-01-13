@@ -61,6 +61,16 @@ await app.finalize();
 | RateLimit              | Rate limiting rules                | [rate-limit.md](references/rate-limit.md)                             |
 | RedirectRule           | URL redirect rules                 | [redirect-rule.md](references/redirect-rule.md)                       |
 
+## GitHub Resources
+
+| Resource              | Description                     | Reference                                                                     |
+| --------------------- | ------------------------------- | ----------------------------------------------------------------------------- |
+| GitHub                | GitHub provider overview        | [github.md](references/github.md)                                             |
+| Comment               | Create PR/issue comments        | [github-comment.md](references/github-comment.md)                             |
+| RepositoryEnvironment | Manage deployment environments  | [github-repository-environment.md](references/github-repository-environment.md) |
+| RepositoryWebhook     | Configure repository webhooks   | [github-repository-webhook.md](references/github-repository-webhook.md)      |
+| Secret                | Manage GitHub Actions secrets   | [github-secret.md](references/github-secret.md)                               |
+
 ## Concepts
 
 | Concept       | Description                                | Reference                                           |
