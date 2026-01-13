@@ -36,6 +36,7 @@ await app.finalize();
 | D1StateStore | State management with D1 | [d1-state-store.md](references/d1-state-store.md) |
 | KVNamespace | Key-value storage | [kv-namespace.md](references/kv-namespace.md) |
 | Queue | Reliable message delivery | [queue.md](references/queue.md) |
+| QueueConsumer | Configure queue message processing | [queue-consumer.md](references/queue-consumer.md) |
 | Container | Docker containers on CF network | [container.md](references/container.md) |
 | Route | URL pattern to Worker mapping | [route.md](references/route.md) |
 | CustomDomain | Attach domains to Workers | [custom-domain.md](references/custom-domain.md) |
@@ -44,6 +45,7 @@ await app.finalize();
 | Secret | Worker secrets management | [secret.md](references/secret.md) |
 | SecretKey | Cryptographic key generation | [secret-key.md](references/secret-key.md) |
 | SecretsStore | Centralized secrets storage | [secrets-store.md](references/secrets-store.md) |
+| WranglerJson | Generate wrangler.json from IaC | [wrangler-json.md](references/wrangler-json.md) |
 
 ## Common Patterns
 
