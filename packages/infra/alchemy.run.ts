@@ -6,6 +6,7 @@ import {
   Worker,
 } from "alchemy/cloudflare";
 import { GitHubSecret, RepositoryEnvironment } from "alchemy/github";
+import { CloudflareStateStore } from "alchemy/state";
 import { config } from "dotenv";
 
 const stage = process.env.STAGE ?? process.env.USER;
@@ -23,7 +24,12 @@ const requireValue = <T>(value: T | undefined, name: string): T => {
   return value;
 };
 
-const app = await alchemy("bs-shame", { stage });
+const app = await alchemy("bs-shame", {
+  stage,
+  stateStore: process.env.CI
+    ? (scope) => new CloudflareStateStore(scope)
+    : undefined,
+});
 const isProd = stage === "prod";
 const isDev = stage === "dev";
 
@@ -57,6 +63,10 @@ const githubClientSecret = requireValue(
 const alchemyPassword = requireValue(
   alchemy.secret.env.ALCHEMY_PASSWORD,
   "ALCHEMY_PASSWORD",
+);
+const alchemyStateToken = requireValue(
+  alchemy.secret.env.ALCHEMY_STATE_TOKEN,
+  "ALCHEMY_STATE_TOKEN",
 );
 
 const db = await D1Database("database", {
@@ -148,6 +158,14 @@ if (isProd || isDev) {
     repository,
     name: "ALCHEMY_PASSWORD",
     value: alchemyPassword,
+    environment: envName,
+  });
+
+  await GitHubSecret(`gh-secret-alchemy-state-token-${stage}`, {
+    owner,
+    repository,
+    name: "ALCHEMY_STATE_TOKEN",
+    value: alchemyStateToken,
     environment: envName,
   });
 
