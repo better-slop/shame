@@ -35,12 +35,6 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Fix libsodium ESM resolution
-        run: |
-          # Bun's symlink structure breaks libsodium ESM imports - patch to use CJS
-          find node_modules -path "*/libsodium-wrappers/dist/modules-esm/libsodium-wrappers.mjs" -exec \
-            sed -i 's|from "./libsodium.mjs"|from "../modules/libsodium-wrappers.js"|g' {} \;
-
       - name: Deploy with Alchemy
         working-directory: packages/infra
         env:
