@@ -457,21 +457,27 @@ const orgRouter = router({
 
       // Get actors with high occurrence counts (globally) who aren't enforced yet
       // Uses composite distinct to avoid org/repo ID collision
+      const banCountExpr = sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.action} = 'ban' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`;
+      const flagCountExpr = sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.action} = 'flag' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`;
+      const totalOccurrenceExpr = sql<number>`COUNT(DISTINCT ${shameReport.scope} || ':' || ${shameReport.scopeGithubId})`;
+
       const recommendedActors = await db
         .select({
           actorGithubUserId: shameReport.actorGithubUserId,
-          banCount: sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.action} = 'ban' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`,
-          flagCount: sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.action} = 'flag' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`,
+          banCount: banCountExpr,
+          flagCount: flagCountExpr,
         })
         .from(shameReport)
         .where(eq(shameReport.visibility, "public"))
         .groupBy(shameReport.actorGithubUserId)
         .having(
           or(
-            sql`COUNT(DISTINCT CASE WHEN ${shameReport.action} = 'ban' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END) >= ${policy.banAt}`,
-            sql`COUNT(DISTINCT ${shameReport.scope} || ':' || ${shameReport.scopeGithubId}) >= ${policy.flagAt}`,
+            sql`${banCountExpr} >= ${policy.banAt}`,
+            sql`${totalOccurrenceExpr} >= ${policy.flagAt}`,
           ),
-        );
+        )
+        .orderBy(desc(banCountExpr), desc(totalOccurrenceExpr))
+        .limit(200);
 
       const recommendedActorIds = recommendedActors
         .filter((r) => !activeEnforcedActorIds.includes(r.actorGithubUserId))

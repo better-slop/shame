@@ -1,9 +1,15 @@
-import type { Context as HonoContext } from "hono";
-
 import { auth } from "@bs-shame/auth";
 
+type RequestContext = {
+  req: {
+    raw: {
+      headers: Headers;
+    };
+  };
+};
+
 export type CreateContextOptions = {
-  context: HonoContext;
+  context: RequestContext;
 };
 
 export async function createContext({ context }: CreateContextOptions) {
