@@ -1,57 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
-import { TheWall, type ShameEntry } from "@/components/the-wall";
+import { TheWall } from "@/components/the-wall";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
 import { GithubIcon } from "@/components/icons/github";
 import { GateAnimation } from "@/components/gate-animation";
+import { useTRPC } from "@/utils/trpc";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
-const MOCK_ENTRIES: ShameEntry[] = [
-  {
-    id: "1",
-    username: "ai-slop-merchant",
-    reason:
-      "Submitted 47 PRs in one day across 12 repos, all with identical AI-generated code that introduced security vulnerabilities.",
-    reportCount: 3,
-    firstReported: "2025-12-01",
-    lastReported: "2026-01-10",
-    sources: [
-      { repo: "facebook/react", type: "pr", url: "#" },
-      { repo: "vercel/next.js", type: "pr", url: "#" },
-      { repo: "microsoft/vscode", type: "pr", url: "#" },
-    ],
-  },
-  {
-    id: "2",
-    username: "copilot-cowboy",
-    reason:
-      "Opened mass issues with hallucinated bug reports that wasted maintainer time investigating non-existent problems.",
-    reportCount: 2,
-    firstReported: "2025-11-15",
-    lastReported: "2026-01-08",
-    sources: [
-      { repo: "golang/go", type: "issue", url: "#" },
-      { repo: "rust-lang/rust", type: "issue", url: "#" },
-    ],
-  },
-  {
-    id: "3",
-    username: "gpt-and-forget",
-    reason:
-      "Posted AI-generated comments that contradicted the actual code behavior, misleading other contributors.",
-    reportCount: 1,
-    firstReported: "2026-01-05",
-    lastReported: "2026-01-05",
-    sources: [{ repo: "nodejs/node", type: "comment", url: "#" }],
-  },
-];
-
 function LandingPage() {
+  const trpc = useTRPC();
+  const { data, isLoading } = useQuery(
+    trpc.shame.wall.list.queryOptions({ limit: 3, offset: 0, sort: "recent" }),
+  );
+
   return (
     <div className="min-h-screen">
       {/* Hero */}
@@ -69,9 +36,11 @@ function LandingPage() {
                   <GithubIcon className="size-5" />
                   Install on GitHub
                 </Button>
-                <Button variant="medieval" size="xl" className="text-base px-6 -bg-linear-180">
-                  View The Wall
-                </Button>
+                <Link to="/wall">
+                  <Button variant="medieval" size="xl" className="text-base px-6 -bg-linear-180">
+                    View The Wall
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -133,7 +102,14 @@ function LandingPage() {
               A monument to those who couldn't be bothered to think for a nanosecond.
             </p>
           </div>
-          <TheWall entries={MOCK_ENTRIES} />
+          <TheWall entries={data?.entries ?? []} isLoading={isLoading} />
+          <div className="text-center mt-8">
+            <Link to="/wall">
+              <Button variant="ghost" size="sm">
+                View all entries →
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 

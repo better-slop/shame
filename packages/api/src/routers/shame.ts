@@ -3,6 +3,13 @@ import { and, count, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@bs-shame/db";
+import type {
+  ShameEvidenceKind,
+  ShameOrgPolicyMode,
+  ShameRepoPolicyMode,
+  ShameReasonCode,
+  ShameScope,
+} from "@bs-shame/db/schema/shame";
 import {
   shameActor,
   shameActorLogin,
@@ -15,29 +22,29 @@ import {
 
 import { publicProcedure, router } from "../index";
 
-const DEFAULT_POLICY = {
-  mode: "manual" as const,
-  flagAt: 2,
-  banAt: 3,
-};
-
 type PolicyConfig = {
-  mode: "manual" | "auto";
+  mode: ShameOrgPolicyMode;
   flagAt: number;
   banAt: number;
 };
 
 type RepoPolicyConfig = {
-  mode: "inherit" | "manual" | "auto";
+  mode: ShameRepoPolicyMode;
   flagAt: number;
   banAt: number;
 };
 
 type EffectivePolicy = {
-  source: "org" | "repo";
+  source: ShameScope;
   orgPolicy: PolicyConfig | null;
   repoPolicy: RepoPolicyConfig | null;
 } & PolicyConfig;
+
+const DEFAULT_POLICY: PolicyConfig = {
+  mode: "manual",
+  flagAt: 2,
+  banAt: 3,
+};
 
 /**
  * Projects only safe (non-audit) fields from a report row.
@@ -80,11 +87,11 @@ function projectEnforcementSafe(enforcement: typeof shameEnforcement.$inferSelec
  * Projects only safe fields from a policy row.
  */
 function projectPolicySafe(
-  policy: typeof shamePolicyOrg.$inferSelect | typeof shamePolicyRepo.$inferSelect | null,
+  policy: typeof shamePolicyOrg.$inferSelect | null,
 ): PolicyConfig | null {
   if (!policy) return null;
   return {
-    mode: policy.mode as "manual" | "auto",
+    mode: policy.mode,
     flagAt: policy.flagAt,
     banAt: policy.banAt,
   };
@@ -389,6 +396,145 @@ const actorRouter = router({
     }),
 });
 
+const wallRouter = router({
+  list: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(20),
+        offset: z.number().min(0).default(0),
+        sort: z.enum(["recent", "reports", "oldest"]).default("recent"),
+      }),
+    )
+    .query(async ({ input }) => {
+      // Group reports by actor, get counts and date ranges
+      const actorStats = await db
+        .select({
+          actorGithubUserId: shameReport.actorGithubUserId,
+          reportCount: sql<number>`COUNT(DISTINCT ${shameReport.scope} || ':' || ${shameReport.scopeGithubId})`,
+          firstReported: sql<number>`MIN(${shameReport.createdAt})`,
+          lastReported: sql<number>`MAX(${shameReport.createdAt})`,
+        })
+        .from(shameReport)
+        .where(eq(shameReport.visibility, "public"))
+        .groupBy(shameReport.actorGithubUserId)
+        .orderBy(
+          input.sort === "reports"
+            ? desc(sql`COUNT(DISTINCT ${shameReport.scope} || ':' || ${shameReport.scopeGithubId})`)
+            : input.sort === "oldest"
+              ? sql`MIN(${shameReport.createdAt})`
+              : desc(sql`MAX(${shameReport.createdAt})`),
+        )
+        .limit(input.limit)
+        .offset(input.offset);
+
+      if (actorStats.length === 0) {
+        return { entries: [], total: 0 };
+      }
+
+      const actorIds = actorStats.map((s) => s.actorGithubUserId);
+
+      // Fetch actor details
+      const actors = await db.query.shameActor.findMany({
+        where: inArray(shameActor.githubUserId, actorIds),
+      });
+
+      // Fetch latest report per actor for reason text
+      const latestReports = await db
+        .select({
+          actorGithubUserId: shameReport.actorGithubUserId,
+          reasonCode: shameReport.reasonCode,
+          reasonText: shameReport.reasonText,
+        })
+        .from(shameReport)
+        .where(
+          and(
+            inArray(shameReport.actorGithubUserId, actorIds),
+            eq(shameReport.visibility, "public"),
+          ),
+        )
+        .orderBy(desc(shameReport.createdAt));
+
+      const latestReportByActor = new Map<
+        number,
+        { reasonCode: ShameReasonCode; reasonText: string | null }
+      >();
+      for (const r of latestReports) {
+        if (!latestReportByActor.has(r.actorGithubUserId)) {
+          latestReportByActor.set(r.actorGithubUserId, {
+            reasonCode: r.reasonCode,
+            reasonText: r.reasonText,
+          });
+        }
+      }
+
+      // Fetch evidence sources (up to 3 per actor)
+      const evidences = await db
+        .select({
+          reportId: shameEvidence.reportId,
+          kind: shameEvidence.kind,
+          url: shameEvidence.url,
+          actorGithubUserId: shameReport.actorGithubUserId,
+          scopeLogin: shameReport.scopeLogin,
+        })
+        .from(shameEvidence)
+        .innerJoin(shameReport, eq(shameEvidence.reportId, shameReport.id))
+        .where(
+          and(
+            inArray(shameReport.actorGithubUserId, actorIds),
+            eq(shameReport.visibility, "public"),
+          ),
+        )
+        .orderBy(desc(shameEvidence.createdAt))
+        .limit(actorIds.length * 3);
+
+      const sourcesByActor = new Map<
+        number,
+        Array<{ repo: string; type: ShameEvidenceKind; url: string }>
+      >();
+      for (const e of evidences) {
+        const list = sourcesByActor.get(e.actorGithubUserId) ?? [];
+        if (list.length < 3) {
+          list.push({
+            repo: e.scopeLogin,
+            type: e.kind,
+            url: e.url,
+          });
+          sourcesByActor.set(e.actorGithubUserId, list);
+        }
+      }
+
+      // Get total count
+      const totalResult = await db
+        .select({ count: sql<number>`COUNT(DISTINCT ${shameReport.actorGithubUserId})` })
+        .from(shameReport)
+        .where(eq(shameReport.visibility, "public"));
+
+      const actorMap = new Map(actors.map((a) => [a.githubUserId, a]));
+
+      const entries = actorStats.map((stat) => {
+        const actor = actorMap.get(stat.actorGithubUserId);
+        const latestReport = latestReportByActor.get(stat.actorGithubUserId);
+        const sources = sourcesByActor.get(stat.actorGithubUserId) ?? [];
+
+        return {
+          id: String(stat.actorGithubUserId),
+          username: actor?.login ?? "unknown",
+          avatarUrl: actor?.avatarUrl ?? undefined,
+          reason: latestReport?.reasonText ?? latestReport?.reasonCode ?? "No reason provided",
+          reportCount: Number(stat.reportCount),
+          firstReported: new Date(stat.firstReported).toISOString().split("T")[0],
+          lastReported: new Date(stat.lastReported).toISOString().split("T")[0],
+          sources,
+        };
+      });
+
+      return {
+        entries,
+        total: Number(totalResult[0]?.count ?? 0),
+      };
+    }),
+});
+
 const orgRouter = router({
   dashboard: publicProcedure
     .input(
@@ -581,4 +727,5 @@ export const shameRouter = router({
   policy: policyRouter,
   actor: actorRouter,
   org: orgRouter,
+  wall: wallRouter,
 });

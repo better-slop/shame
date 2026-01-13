@@ -1,3 +1,7 @@
+import { Link } from "@tanstack/react-router";
+
+import type { ShameEvidenceKind } from "@bs-shame/api/types";
+
 import {
   StoneCard,
   StoneCardHeader,
@@ -18,7 +22,7 @@ type ShameEntry = {
   lastReported: string;
   sources: Array<{
     repo: string;
-    type: "pr" | "issue" | "comment";
+    type: ShameEvidenceKind;
     url: string;
   }>;
 };
@@ -42,58 +46,60 @@ function ShameEntryCard({ entry }: { entry: ShameEntry }) {
     entry.reportCount >= 3 ? "banned" : entry.reportCount >= 2 ? "flagged" : "warned";
 
   return (
-    <StoneCard>
-      <StoneCardHeader>
-        <div className="flex items-center gap-3">
-          {entry.avatarUrl ? (
-            <img
-              src={entry.avatarUrl}
-              alt=""
-              className="size-10 rounded-full ring-2 ring-shame-crimson/30"
-            />
-          ) : (
-            <div className="pillory-icon">
-              <svg
-                className="size-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                />
-              </svg>
+    <Link to="/wall/$login" params={{ login: entry.username }} className="block group">
+      <StoneCard className="transition-all group-hover:border-shame-crimson/50 group-hover:shadow-md">
+        <StoneCardHeader>
+          <div className="flex items-center gap-3">
+            {entry.avatarUrl ? (
+              <img
+                src={entry.avatarUrl}
+                alt=""
+                className="size-10 rounded-full ring-2 ring-shame-crimson/30"
+              />
+            ) : (
+              <div className="pillory-icon">
+                <svg
+                  className="size-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                  />
+                </svg>
+              </div>
+            )}
+            <div>
+              <StoneCardTitle>{entry.username}</StoneCardTitle>
+              <StoneCardMeta>First reported {formatDate(entry.firstReported)}</StoneCardMeta>
             </div>
-          )}
-          <div>
-            <StoneCardTitle>{entry.username}</StoneCardTitle>
-            <StoneCardMeta>First reported {formatDate(entry.firstReported)}</StoneCardMeta>
           </div>
-        </div>
-        <ShameBadge count={entry.reportCount}>
-          {severityLevel === "banned"
-            ? "BANNED"
-            : severityLevel === "flagged"
-              ? "FLAGGED"
-              : "WARNED"}
-        </ShameBadge>
-      </StoneCardHeader>
+          <ShameBadge count={entry.reportCount}>
+            {severityLevel === "banned"
+              ? "BANNED"
+              : severityLevel === "flagged"
+                ? "FLAGGED"
+                : "WARNED"}
+          </ShameBadge>
+        </StoneCardHeader>
 
-      <StoneCardContent>
-        <p className="line-clamp-2">{entry.reason}</p>
-      </StoneCardContent>
+        <StoneCardContent>
+          <p className="line-clamp-2">{entry.reason}</p>
+        </StoneCardContent>
 
-      <StoneCardFooter>
-        <span>
-          Reported in {entry.sources.length} repo{entry.sources.length !== 1 && "s"}
-        </span>
-        <span className="text-border">•</span>
-        <span>Last: {formatDate(entry.lastReported)}</span>
-      </StoneCardFooter>
-    </StoneCard>
+        <StoneCardFooter>
+          <span>
+            Reported in {entry.sources.length} repo{entry.sources.length !== 1 && "s"}
+          </span>
+          <span className="text-border">•</span>
+          <span>Last: {formatDate(entry.lastReported)}</span>
+        </StoneCardFooter>
+      </StoneCard>
+    </Link>
   );
 }
 

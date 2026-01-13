@@ -9,11 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WallRouteImport } from './routes/wall'
 import { Route as TodosRouteImport } from './routes/todos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as WallLoginRouteImport } from './routes/wall.$login'
+import { Route as DashboardWallRouteImport } from './routes/dashboard/wall'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
+import { Route as DashboardReposRouteImport } from './routes/dashboard/repos'
+import { Route as DashboardReportsRouteImport } from './routes/dashboard/reports'
 
+const WallRoute = WallRouteImport.update({
+  id: '/wall',
+  path: '/wall',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TodosRoute = TodosRouteImport.update({
   id: '/todos',
   path: '/todos',
@@ -34,43 +46,134 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const WallLoginRoute = WallLoginRouteImport.update({
+  id: '/$login',
+  path: '/$login',
+  getParentRoute: () => WallRoute,
+} as any)
+const DashboardWallRoute = DashboardWallRouteImport.update({
+  id: '/wall',
+  path: '/wall',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardReposRoute = DashboardReposRouteImport.update({
+  id: '/repos',
+  path: '/repos',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardReportsRoute = DashboardReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/todos': typeof TodosRoute
+  '/wall': typeof WallRouteWithChildren
+  '/dashboard/reports': typeof DashboardReportsRoute
+  '/dashboard/repos': typeof DashboardReposRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/wall': typeof DashboardWallRoute
+  '/wall/$login': typeof WallLoginRoute
+  '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/todos': typeof TodosRoute
+  '/wall': typeof WallRouteWithChildren
+  '/dashboard/reports': typeof DashboardReportsRoute
+  '/dashboard/repos': typeof DashboardReposRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/wall': typeof DashboardWallRoute
+  '/wall/$login': typeof WallLoginRoute
+  '/dashboard': typeof DashboardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/todos': typeof TodosRoute
+  '/wall': typeof WallRouteWithChildren
+  '/dashboard/reports': typeof DashboardReportsRoute
+  '/dashboard/repos': typeof DashboardReposRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/wall': typeof DashboardWallRoute
+  '/wall/$login': typeof WallLoginRoute
+  '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login' | '/todos'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/todos'
+    | '/wall'
+    | '/dashboard/reports'
+    | '/dashboard/repos'
+    | '/dashboard/settings'
+    | '/dashboard/wall'
+    | '/wall/$login'
+    | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/todos'
-  id: '__root__' | '/' | '/dashboard' | '/login' | '/todos'
+  to:
+    | '/'
+    | '/login'
+    | '/todos'
+    | '/wall'
+    | '/dashboard/reports'
+    | '/dashboard/repos'
+    | '/dashboard/settings'
+    | '/dashboard/wall'
+    | '/wall/$login'
+    | '/dashboard'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/todos'
+    | '/wall'
+    | '/dashboard/reports'
+    | '/dashboard/repos'
+    | '/dashboard/settings'
+    | '/dashboard/wall'
+    | '/wall/$login'
+    | '/dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
   TodosRoute: typeof TodosRoute
+  WallRoute: typeof WallRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wall': {
+      id: '/wall'
+      path: '/wall'
+      fullPath: '/wall'
+      preLoaderRoute: typeof WallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/todos': {
       id: '/todos'
       path: '/todos'
@@ -99,14 +202,87 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/wall/$login': {
+      id: '/wall/$login'
+      path: '/$login'
+      fullPath: '/wall/$login'
+      preLoaderRoute: typeof WallLoginRouteImport
+      parentRoute: typeof WallRoute
+    }
+    '/dashboard/wall': {
+      id: '/dashboard/wall'
+      path: '/wall'
+      fullPath: '/dashboard/wall'
+      preLoaderRoute: typeof DashboardWallRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/repos': {
+      id: '/dashboard/repos'
+      path: '/repos'
+      fullPath: '/dashboard/repos'
+      preLoaderRoute: typeof DashboardReposRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/reports': {
+      id: '/dashboard/reports'
+      path: '/reports'
+      fullPath: '/dashboard/reports'
+      preLoaderRoute: typeof DashboardReportsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
+interface DashboardRouteChildren {
+  DashboardReportsRoute: typeof DashboardReportsRoute
+  DashboardReposRoute: typeof DashboardReposRoute
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardWallRoute: typeof DashboardWallRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardReportsRoute: DashboardReportsRoute,
+  DashboardReposRoute: DashboardReposRoute,
+  DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardWallRoute: DashboardWallRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
+interface WallRouteChildren {
+  WallLoginRoute: typeof WallLoginRoute
+}
+
+const WallRouteChildren: WallRouteChildren = {
+  WallLoginRoute: WallLoginRoute,
+}
+
+const WallRouteWithChildren = WallRoute._addFileChildren(WallRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
   TodosRoute: TodosRoute,
+  WallRoute: WallRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

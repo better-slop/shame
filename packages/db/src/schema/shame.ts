@@ -12,10 +12,16 @@ import { user } from "./auth";
 
 const msNow = sql`(cast(unixepoch('subsecond') * 1000 as integer))`;
 
-const shameScopeEnum = ["org", "repo"] as const;
-const shameVisibilityEnum = ["public", "private"] as const;
-const shameReportActionEnum = ["flag", "ban"] as const;
-const shameReasonCodeEnum = [
+export const shameScopeEnum = ["org", "repo"] as const;
+export type ShameScope = (typeof shameScopeEnum)[number];
+
+export const shameVisibilityEnum = ["public", "private"] as const;
+export type ShameVisibility = (typeof shameVisibilityEnum)[number];
+
+export const shameReportActionEnum = ["flag", "ban"] as const;
+export type ShameReportAction = (typeof shameReportActionEnum)[number];
+
+export const shameReasonCodeEnum = [
   "ai_spam",
   "spam",
   "harassment",
@@ -24,7 +30,9 @@ const shameReasonCodeEnum = [
   "malware",
   "other",
 ] as const;
-const shameEvidenceKindEnum = [
+export type ShameReasonCode = (typeof shameReasonCodeEnum)[number];
+
+export const shameEvidenceKindEnum = [
   "pr",
   "issue",
   "comment",
@@ -34,11 +42,22 @@ const shameEvidenceKindEnum = [
   "profile",
   "other",
 ] as const;
-const shameOrgPolicyModeEnum = ["manual", "auto"] as const;
-const shameRepoPolicyModeEnum = ["inherit", "manual", "auto"] as const;
-const shameEnforcementSourceEnum = ["manual", "auto"] as const;
-const shameEnforcementStatusEnum = ["flag", "ban"] as const;
-const githubActorTypeEnum = ["user", "organization", "bot", "unknown"] as const;
+export type ShameEvidenceKind = (typeof shameEvidenceKindEnum)[number];
+
+export const shameOrgPolicyModeEnum = ["manual", "auto"] as const;
+export type ShameOrgPolicyMode = (typeof shameOrgPolicyModeEnum)[number];
+
+export const shameRepoPolicyModeEnum = ["inherit", "manual", "auto"] as const;
+export type ShameRepoPolicyMode = (typeof shameRepoPolicyModeEnum)[number];
+
+export const shameEnforcementSourceEnum = ["manual", "auto"] as const;
+export type ShameEnforcementSource = (typeof shameEnforcementSourceEnum)[number];
+
+export const shameEnforcementStatusEnum = ["flag", "ban"] as const;
+export type ShameEnforcementStatus = (typeof shameEnforcementStatusEnum)[number];
+
+export const githubActorTypeEnum = ["user", "organization", "bot", "unknown"] as const;
+export type GithubActorType = (typeof githubActorTypeEnum)[number];
 
 export const shameActor = sqliteTable(
   "shame_actor",
