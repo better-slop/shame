@@ -41,6 +41,9 @@ await app.finalize();
 | CustomDomain | Attach domains to Workers | [custom-domain.md](references/custom-domain.md) |
 | Zone | DNS zone management | [zone.md](references/zone.md) |
 | TanStackStart | Deploy TanStack Start apps to CF | [tanstack-start.md](references/tanstack-start.md) |
+| Secret | Worker secrets management | [secret.md](references/secret.md) |
+| SecretKey | Cryptographic key generation | [secret-key.md](references/secret-key.md) |
+| SecretsStore | Centralized secrets storage | [secrets-store.md](references/secrets-store.md) |
 
 ## Common Patterns
 
