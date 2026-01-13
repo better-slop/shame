@@ -108,8 +108,8 @@ console.log(`Server -> ${server.url}`);
 
 // GitHub automation (only for dev/prod stages)
 if (isProd || isDev) {
-  const owner = "anomalyco";
-  const repository = "bs-shame";
+  const owner = "better-slop";
+  const repository = "shame";
   const envName = isProd ? "production" : "development";
 
   // Create GitHub environment
