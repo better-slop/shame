@@ -56,6 +56,9 @@ await app.finalize();
 | AccountApiToken | Create scoped API tokens | [account-api-token.md](references/account-api-token.md) |
 | AccountId | Retrieve account ID | [account-id.md](references/account-id.md) |
 | Logpush | Export logs to destinations | [logpush.md](references/logpush.md) |
+| AnalyticsEngine | Write and query analytics data | [analytics-engine.md](references/analytics-engine.md) |
+| RateLimit | Rate limiting rules | [rate-limit.md](references/rate-limit.md) |
+| RedirectRule | URL redirect rules | [redirect-rule.md](references/redirect-rule.md) |
 
 ## Common Patterns
 
