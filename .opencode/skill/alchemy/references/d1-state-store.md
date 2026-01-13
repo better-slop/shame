@@ -1,6 +1,6 @@
 ---
-name: alchemy.run:d1-state-store
-description: Alchemy.run worker IaC patterns; Learn how to manage state with Cloudflare D1 databases.
+title: D1StateStore
+description: Learn how to manage state with Cloudflare D1 databases.
 ---
 
 ## Basic Configuration

@@ -1,6 +1,6 @@
 ---
-name: alchemy.run:worker
-description: Alchemy.run worker IaC patterns; Learn how to deploy, configure, and manage Cloudflare Workers using Alchemy for serverless functions at the edge.
+title: Worker
+description: Learn how to deploy, configure, and manage Cloudflare Workers using Alchemy for serverless functions at the edge.
 ---
 
 A [Cloudflare Worker](https://developers.cloudflare.com/workers/) is a serverless function that runs on Cloudflare's global network.
@@ -999,3 +999,5 @@ export default {
 - Static Assets: See [Assets](/providers/cloudflare/assets)
 - Durable Objects & RPC: See [Durable Object Namespace](/providers/cloudflare/durable-object-namespace)
 - Deploy & routing: See [Route](/providers/cloudflare/route), [Custom Domain](/providers/cloudflare/custom-domain), and [Zone](/providers/cloudflare/zone)
+
+

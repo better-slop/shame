@@ -1,6 +1,6 @@
 ---
-name: alchemy.run:d1-database
-description: Alchemy.run worker IaC patterns; Learn how to create, query, and manage Cloudflare D1 Databases using Alchemy for serverless SQL databases.
+title: D1Database
+description: Learn how to create, query, and manage Cloudflare D1 Databases using Alchemy for serverless SQL databases.
 ---
 
 The D1Database component lets you add [Cloudflare D1 Databases](https://developers.cloudflare.com/d1/) to your app.

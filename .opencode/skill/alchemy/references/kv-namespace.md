@@ -1,6 +1,6 @@
 ---
-name: alchemy.run:kv-namespace
-description: Alchemy.run worker IaC patterns; Learn how to create and manage Cloudflare KV Namespaces using Alchemy for key-value data storage at the edge.
+title: KVNamespace
+description: Learn how to create and manage Cloudflare KV Namespaces using Alchemy for key-value data storage at the edge.
 ---
 
 A [Cloudflare KV Namespace](https://developers.cloudflare.com/kv/concepts/kv-namespaces/) is a key-value store that can be used to store data for your application.

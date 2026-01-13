@@ -1,6 +1,6 @@
 ---
-name: alchemy.run:workflows
-description: Alchemy.run workflow IaC patterns; Learn how to create and manage Cloudflare Workflows using Alchemy to orchestrate and automate tasks.
+title: Workflow
+description: Learn how to create and manage Cloudflare Workflows using Alchemy to orchestrate and automate tasks.
 ---
 
 A [Cloudflare Workflow](https://developers.cloudflare.com/workers/configuration/workflows/) allows you to define reusable logic that can be shared across multiple Workers.

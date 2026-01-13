@@ -1,6 +1,6 @@
 ---
-name: alchemy.run:container
-description: Alchemy.run worker IaC patterns; Deploy Docker containers on Cloudflare's global network.
+title: Container
+description: Deploy Docker containers on Cloudflare's global network
 ---
 
 # Container
