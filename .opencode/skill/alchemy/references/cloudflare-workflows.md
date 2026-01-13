@@ -5,7 +5,6 @@ sidebar:
   order: 1.2
 ---
 
-import { Steps } from '@astrojs/starlight/components';
 
 This guide explains how to create, bind and use Cloudflare Workflows within your Worker scripts.
 

@@ -5,7 +5,6 @@ sidebar:
   order: 0
 ---
 
-import { FileTree, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 
 In this guide, we'll walk through how to:
 1. Set up a simple monorepo with two applications: a `backend` and a `frontend`

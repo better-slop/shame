@@ -5,7 +5,6 @@ sidebar:
   order: 1.1
 ---
 
-import { Steps } from '@astrojs/starlight/components';
 
 This guide explains how to create, bind and use Cloudflare Durable Objects within your Worker scripts.
 

@@ -5,7 +5,6 @@ sidebar:
   order: 1
 ---
 
-import { Steps } from '@astrojs/starlight/components';
 
 Debug your Alchemy infrastructure and application code directly in VSCode with full breakpoint support and step-through debugging.
 

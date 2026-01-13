@@ -5,7 +5,6 @@ sidebar:
   order: 20
 ---
 
-import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
 
 LiveStore lets you build local-first, real-time, collaborative apps by combining an **event-sourced SQLite state** with automatic syncing.  
 

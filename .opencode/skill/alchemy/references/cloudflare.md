@@ -5,7 +5,6 @@ sidebar:
   order: 0
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 There are three supported ways of authorizing Alchemy with Cloudflare:
 1. **OAuth (recommended**) - short-lived access and refresh tokens

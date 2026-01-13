@@ -25,8 +25,6 @@ A Container's lifecycle is managed by a Durable Object class that you define.
 We recommend using the `Container` class from `@cloudflare/containers` since it takes care of the basic container lifecycle for you:
 
 ```ts
-import { Container } from "@cloudflare/containers";
-import type { worker } from "../alchemy.run.ts";
 
 export class MyContainer extends Container {
   declare env: typeof worker.Env;
@@ -57,10 +55,7 @@ export class MyContainer extends Container {
 Now, create a `Container` Resource in your `alchemy.run.ts` file and connect it to your `MyContainer` class:
 
 ```ts
-import { Container, Worker } from "alchemy/cloudflare";
-import { Image } from "alchemy/docker";
 // import the type of your Container's implementation
-import type { MyContainer } from "./src/container.ts";
 
 const container = await Container<MyContainer>("my-container", {
   className: "MyContainer", // <- and ^
@@ -246,8 +241,6 @@ export const worker = await Worker("my-worker", {
 To route requests, have your Worker's `fetch` handler resolve a Durable Object instance and proxy the `request` to it:
 
 ```ts
-import { getContainer } from "@cloudflare/containers";
-import type { worker } from "../alchemy.run.ts";
 
 // the class must be exported for Cloudflare
 export { MyContainer } from "./container.ts";

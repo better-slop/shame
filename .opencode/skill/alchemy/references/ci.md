@@ -5,8 +5,6 @@ sidebar:
   order: 0
 ---
 
-import { Code, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
-import yaml from "yaml";
 
 export function DeployWorkflow({ manager = "bun" }) {
   const managers = {

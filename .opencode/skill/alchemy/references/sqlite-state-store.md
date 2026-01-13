@@ -5,7 +5,6 @@ sidebar:
   order: 11
 ---
 
-import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
 
 SQLiteStateStore provides a [State Store](/concepts/state) using local SQLite databases with support for multiple SQLite engines including Bun SQLite, better-sqlite3, and libSQL.
 

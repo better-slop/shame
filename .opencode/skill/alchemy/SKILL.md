@@ -5,7 +5,7 @@ description: Alchemy IaC for Cloudflare - deploy Workers, D1, KV, Queues, Contai
 
 # Alchemy
 
-Alchemy is a TypeScript-first infrastructure-as-code tool for deploying to Cloudflare (and many other cloud providers). Define your infrastructure in `alchemy.run.ts`.
+Alchemy is a TypeScript-first infrastructure-as-code tool for deploying to Cloudflare (and many other cloud providers). Define your infrastructure in a `alchemy.run.ts` file.
 
 ## Quick Start
 
@@ -70,7 +70,7 @@ await app.finalize();
 | Scope         | Resource lifecycle and hierarchy           | [scope.md](references/scope.md)                     |
 | Secrets       | Manage sensitive configuration             | [secret.md](references/secret.md)                   |
 | Profiles      | Environment-specific configuration         | [profiles.md](references/profiles.md)               |
-| Dev Mode      | Local development workflow                 | [dev.md](references/dev.md)                         |
+| Dev Mode      | Local development (experimental)           | [dev.md](references/dev.md)                         |
 | Testing       | Test your infrastructure                   | [testing.md](references/testing.md)                 |
 
 ## Guides

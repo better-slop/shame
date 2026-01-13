@@ -10,7 +10,6 @@ A [Cloudflare Worker](https://developers.cloudflare.com/workers/) is a serverles
 Deploy a minimal Worker with a single HTTP handler:
 
 ```ts
-import { Worker } from "alchemy/cloudflare";
 
 export const worker = await Worker("api", {
   name: "api-worker",
@@ -45,8 +44,6 @@ Use bindings to attach KV, R2, Durable Objects, secrets, and other resources to 
 Configure Worker properties for compatibility, observability, and runtime limits:
 ```ts
 // alchemy.run.ts
-import alchemy from 'alchemy';
-import { Worker, KVNamespace, R2Bucket } from "alchemy/cloudflare";
 
 const cache = await KVNamespace("cache", { title: "cache-store" });
 const storage = await R2Bucket("storage", { name: "user-storage" });
@@ -115,7 +112,6 @@ I/O is not allowed at top-level in Cloudflare Workers.
 Bind custom domains directly to your worker for a simpler routing setup:
 
 ```ts
-import { Worker } from "alchemy/cloudflare";
 
 const worker = await Worker("api", {
   name: "api-worker",
@@ -136,7 +132,6 @@ See the [Routes and Domains](https://developers.cloudflare.com/workers/configura
 Create a worker and its routes in a single declaration:
 
 ```ts
-import { Worker, Zone } from "alchemy/cloudflare";
 
 const zone = await Zone("example-zone", {
   name: "example.com",
@@ -173,7 +168,6 @@ There are two ways to infer the environment types:
 #### 1. Specify the type of `env` in your worker (simplest):
 ```ts
 // src/worker.ts
-import type { worker } from "../alchemy.run.ts";
 
 export default {
   async fetch(request, env: typeof worker.Env) {
@@ -187,7 +181,6 @@ export default {
 If you need access to the env at the top level, create a file called `env.ts` re-export `env` casted to the worker's environment type:
 ```ts 
 // ./src/env.ts
-import { env } from "cloudflare:workers";
 
 export type Env = typeof Env;
 export const Env = env as typeof worker.Env;
@@ -196,7 +189,6 @@ export const Env = env as typeof worker.Env;
 Then import and use the `Env` type in your worker and initialize your clients, etc.
 ```ts
 // src/worker.ts
-import { Env } from "./env.ts";
 
 const myClient = new MyClient(Env.DB);
 ```
@@ -209,7 +201,6 @@ Create a `DurableObjectNamespace` in your `alchemy.run.ts` script and bind it to
 
 ```ts
 // alchemy.run.ts
-import { Worker, DurableObjectNamespace } from "alchemy/cloudflare";
 
 const counter = DurableObjectNamespace("counter", {
   className: "Counter",
@@ -228,7 +219,6 @@ Then export a class that extends `DurableObject` and has `"Counter"` as the clas
 
 ```ts
 // ./src/worker.ts
-import { DurableObject } from "cloudflare:workers";
 
 export class Counter extends DurableObject {
   async increment(): Promise<number> {
@@ -269,7 +259,6 @@ Create a `Workflow` in your `alchemy.run.ts` script and bind it to your Worker:
 
 ```ts
 // alchemy.run.ts
-import { Worker, Workflow } from "alchemy/cloudflare";
 
 const orderProcessor = Workflow("order-processor", {
   workflowName: "order-processing",
@@ -288,7 +277,6 @@ Then define the workflow class in your Worker entrypoint:
 
 ```ts
 // ./src/workflow.ts
-import { WorkflowEntrypoint } from "cloudflare:workers";
 
 export class OrderProcessor extends WorkflowEntrypoint {
   async run(event, step) {
@@ -333,7 +321,6 @@ Load and execute workers dynamically at runtime using WorkerLoader:
 
 ```ts
 // alchemy.run.ts
-import { Worker, WorkerLoader } from "alchemy/cloudflare";
 
 export const worker = await Worker("dynamic-loader", {
   entrypoint: "./src/worker.ts",
@@ -347,7 +334,6 @@ Then use the loader to create workers on-demand:
 
 ```ts
 // ./src/worker.ts
-import type { worker } from "../alchemy.run.ts";
 
 export default {
   async fetch(request: Request, env: typeof worker.Env) {
@@ -382,7 +368,6 @@ See the Cloudflare [Dynamic Worker Loaders](https://developers.cloudflare.com/wo
 
 Configure Workers to consume messages from queues with automatic retries, batching, and dead letter queues for reliable background processing:
 ```ts
-import { Worker, Queue } from "alchemy/cloudflare";
 
 const taskQueue = await Queue("task-queue", {
   name: "task-processing"
@@ -414,7 +399,6 @@ export const processor = await Worker("processor", {
 **Consumer implementation:**
 ```ts
 // ./src/processor.ts
-import type { MessageBatch } from "@cloudflare/workers-types";
 
 export default {
   async queue(batch: MessageBatch, env: Env) {
@@ -454,7 +438,6 @@ To publish messages to a Queue from a Worker, bind it to the Worker:
 
 ```ts
 // alchemy.run.ts
-import { Worker, Queue } from "alchemy/cloudflare";
 
 export const taskQueue = await Queue("task-queue");
 
@@ -469,7 +452,6 @@ export const producer = await Worker("producer", {
 Then, in your producer worker, you can send messages to the queue:
 ```ts
 // ./src/producer.ts
-import type { producer } from "../alchemy.run.ts";
 
 export default {
   async fetch(request: Request, env: typeof producer.Env) {
@@ -508,7 +490,6 @@ export const frontend = await Worker("frontend", {
 
 ```ts
 // ./src/cron.ts
-import type { ScheduledEvent } from "@cloudflare/workers-types";
 
 export default {
   async scheduled(event: ScheduledEvent, env: Env) {
@@ -596,8 +577,6 @@ You should initialize clients at the top-level of your Worker script to reduce c
 
 ```ts
 // src/worker.ts
-import { env } from "cloudflare:workers";
-import MyExpensiveApiClient from "example-api-client";
 
 // Initialize client at module scope
 const apiClient = new MyExpensiveApiClient();
@@ -619,7 +598,6 @@ Enable Workers to reference themselves:
 
 ```ts
 // alchemy.run.ts
-import { Worker, Self } from "alchemy/cloudflare";
 
 export const service = await Worker("auth-service", {
   entrypoint: "./src/auth.ts",
@@ -639,7 +617,6 @@ ${workerName}.${subdomain}.workers.dev
 Use the `Worker.DevDomain` or `Worker.DevUrl` binding to inject a Worker's own subdomain or URL into its script.
 
 ```ts
-import { Worker } from "alchemy/cloudflare";
 
 const worker = await Worker("api", {
   name: "api-worker",
@@ -661,7 +638,6 @@ Break circular dependencies with WorkerStub:
 
 ```ts
 // alchemy.run.ts
-import { Worker, WorkerStub } from "alchemy/cloudflare";
 
 const authStub = WorkerStub("auth-stub", { name: "auth-service" });
 
@@ -713,7 +689,6 @@ You can learn more about [Smart Placement](https://developers.cloudflare.com/wor
 Deploy workers to dispatch namespaces for multi-tenant architectures using Cloudflare's Workers for Platforms:
 
 ```ts
-import { Worker, DispatchNamespace } from "alchemy/cloudflare";
 
 // Create a dispatch namespace
 const tenants = await DispatchNamespace("tenants", {
@@ -741,7 +716,6 @@ In your `./src/router.ts`, you can dynamically route to tenant workers:
 
 ```ts
 // src/router.ts
-import type { router } from "./alchemy.run.ts";
 
 export default {
   async fetch(request: Request, env: typeof router.Env) {
@@ -809,7 +783,6 @@ For example, say you have a RPC worker that exports a class extending `WorkerEnt
 
 ```ts
 // ./src/rpc.ts
-import { WorkerEntrypoint } from "cloudflare:workers";
 
 export default class MyRPC extends WorkerEntrypoint {
   async getData(id: string): Promise<{ id: string }> {
@@ -833,9 +806,6 @@ In your `alchemy.run.ts` script, import the `type MyRPC` and set it as the `rpc`
 
 ```diff lang='ts'
 // alchemy.run.ts
-import { type } from "alchemy";
-import { Worker } from "alchemy/cloudflare";
-import type MyRPC from "./src/rpc.ts";
 
 export const rpcWorker = await Worker("rpc", {
   entrypoint: "./src/rpc.ts",
@@ -860,7 +830,6 @@ You can access a Durable Object from another Worker by using the `bindings` prop
 
 ```diff lang='ts'
 // alchemy.run.ts
-import { Worker, DurableObjectNamespace } from "alchemy/cloudflare";
 
 const data = await Worker("data", {
   entrypoint: "./src/data.ts",
@@ -890,7 +859,6 @@ await Worker("api", {
 Define routes and domains alongside the Worker to keep routing policies readable:
 ```ts
 // alchemy.run.ts
-import { Worker, Zone } from "alchemy/cloudflare";
 
 const zone = await Zone("example", { name: "example.com", type: "full" });
 
@@ -914,7 +882,6 @@ Preview URLs may be unavailable for Durable Objects or special bindings. See [Pr
 Generate `wrangler.json` is available with the `WranglerJson` resource:
 ```ts
 // alchemy.run.ts
-import { WranglerJson } from "alchemy/cloudflare";
 
 await WranglerJson({
   worker: api,

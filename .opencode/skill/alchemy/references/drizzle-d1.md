@@ -5,7 +5,6 @@ sidebar:
   order: 15
 ---
 
-import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
 
 Build a full-stack application with Drizzle ORM and Cloudflare D1 Database. This guide shows you how to set up a type-safe database layer with automated migrations and a web interface.
 
