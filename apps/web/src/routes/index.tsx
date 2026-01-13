@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Suspense } from "react";
 
 import { Button } from "@/components/ui/button";
 import { TheWall } from "@/components/the-wall";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { AsciiRenderer } from "@/components/ascii-render";
 
 import { GithubIcon } from "@/components/icons/github";
 import { GateAnimation } from "@/components/gate-animation";
@@ -23,8 +25,11 @@ function LandingPage() {
     <div className="min-h-screen">
       {/* Hero */}
       <header className="relative overflow-hidden texture-parchment">
+        <Suspense fallback={null}>
+          <AsciiRenderer className="absolute top-0 right-0 w-[400px] h-full opacity-20 pointer-events-none hidden md:block" />
+        </Suspense>
         <div className="medieval-border">
-          <div className="container mx-auto max-w-5xl px-4 pt-28 pb-20 md:pt-36 md:pb-32">
+          <div className="container relative z-10 mx-auto max-w-5xl px-4 pt-28 pb-20 md:pt-36 md:pb-32">
             <div className="text-center space-y-6">
               <h1 className="text-shame-crimson">The Wall of Shame</h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">

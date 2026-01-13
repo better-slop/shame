@@ -1,29 +1,34 @@
-"use client";
-
-import React, { useEffect, useRef } from "react";
-import { OrbitControls } from "@react-three/drei";
+import { useEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { AsciiEffect } from "three/examples/jsm/effects/AsciiEffect.js";
+import type { Mesh } from "three";
 
-export const AsciiRenderer = () => {
+type AsciiRendererProps = {
+  className?: string;
+};
+
+export const AsciiRenderer = ({ className }: AsciiRendererProps) => {
   return (
-    <Canvas>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} intensity={1} />
-      <directionalLight position={[-10, -10, -5]} intensity={1} />
-      <Torusknot />
-      <OrbitControls />
-      <Renderer />
-    </Canvas>
+    <div className={className}>
+      <Canvas camera={{ position: [0, 0, 5] }}>
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} intensity={1} />
+        <directionalLight position={[-10, -10, -5]} intensity={1} />
+        <Torusknot />
+        <AsciiRenderer_ />
+      </Canvas>
+    </div>
   );
 };
 
 const Torusknot = () => {
-  const meshRef = useRef<any>(null);
+  const meshRef = useRef<Mesh>(null);
 
-  useFrame(
-    (state, delta) => (meshRef.current.rotation.x = meshRef.current.rotation.y += delta / 2),
-  );
+  useFrame((_, delta) => {
+    if (!meshRef.current) return;
+    meshRef.current.rotation.x += delta / 4;
+    meshRef.current.rotation.y += delta / 4;
+  });
 
   return (
     <mesh ref={meshRef} scale={1.25}>
@@ -33,19 +38,22 @@ const Torusknot = () => {
   );
 };
 
-const Renderer = () => {
+const AsciiRenderer_ = () => {
   const { gl, scene, camera, size } = useThree();
-  const effectRef = useRef<AsciiEffect>(null);
+  const effectRef = useRef<AsciiEffect | null>(null);
 
   useEffect(() => {
-    const effect = new AsciiEffect(gl, " .:-+*=%@#");
+    const effect = new AsciiEffect(gl, " .:-+*=%@#", { invert: true });
 
     effect.domElement.style.position = "absolute";
     effect.domElement.style.top = "0px";
     effect.domElement.style.left = "0px";
-    effect.domElement.style.color = "white";
-    effect.domElement.style.backgroundColor = "black";
+    effect.domElement.style.color = "var(--color-muted-foreground)";
+    effect.domElement.style.backgroundColor = "transparent";
     effect.domElement.style.pointerEvents = "none";
+    effect.domElement.style.fontFamily = "monospace";
+    effect.domElement.style.fontSize = "10px";
+    effect.domElement.style.lineHeight = "1";
 
     effect.setSize(size.width, size.height);
 
@@ -61,7 +69,13 @@ const Renderer = () => {
         container.replaceChild(gl.domElement, effect.domElement);
       }
     };
-  }, [gl, size]);
+  }, [gl]);
+
+  useEffect(() => {
+    if (effectRef.current) {
+      effectRef.current.setSize(size.width, size.height);
+    }
+  }, [size]);
 
   useFrame(() => {
     if (effectRef.current) {
