@@ -1,7 +1,42 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AnthropicLogo, OpenAILogo } from "./icons/ai-logos";
 
 type Phase = "approaching" | "denied" | "reset";
+
+const SLOP_PHRASES = [
+  "LGTM!",
+  "You're absolutely right!",
+  "I can help!",
+  "```fix```",
+  "As an AI...",
+  "Let me refactor",
+  "Refactored entire codebase",
+  "+12000 -0",
+  "Refactored",
+  "Improved!",
+  "// TODO",
+  "async await",
+  "Promise.all",
+  "try { } catch",
+  "Clean code",
+  "DRY principle",
+  "SOLID",
+  "+49000 -10",
+  "Actually...",
+  "npm install",
+  "git push -f",
+];
+
+type SlopParticle = {
+  id: number;
+  phrase: string;
+  angle: number;
+  distance: number;
+  duration: number;
+  rotation: number;
+  scale: number;
+  createdAt: number;
+};
 
 export function GateAnimation() {
   const [phase, setPhase] = useState<Phase>("approaching");
@@ -25,7 +60,7 @@ export function GateAnimation() {
     <div className="gate-scene" data-phase={phase}>
       {/* Atmospheric fog */}
       <div className="fog-layer" />
-      
+
       {/* Torch flames */}
       <div className="torch torch-left">
         <div className="torch-bracket" />
@@ -46,12 +81,19 @@ export function GateAnimation() {
       <div className="archway">
         <div className="arch-stones">
           {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="arch-stone" style={{ "--i": i } as React.CSSProperties} />
+            <div
+              key={i}
+              className="arch-stone"
+              style={{ "--i": i } as React.CSSProperties}
+            />
           ))}
         </div>
         <div className="keystone">
           <svg viewBox="0 0 24 24" className="keystone-skull">
-            <path fill="currentColor" d="M12 2C6.477 2 2 6.477 2 12c0 3.052 1.364 5.78 3.5 7.614V22h2v-1.5h2V22h5v-1.5h2V22h2v-2.386C20.636 17.78 22 15.052 22 12c0-5.523-4.477-10-10-10zm-3 12a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm6 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm-3 4c-1.657 0-3-.895-3-2h6c0 1.105-1.343 2-3 2z"/>
+            <path
+              fill="currentColor"
+              d="M12 2C6.477 2 2 6.477 2 12c0 3.052 1.364 5.78 3.5 7.614V22h2v-1.5h2V22h5v-1.5h2V22h2v-2.386C20.636 17.78 22 15.052 22 12c0-5.523-4.477-10-10-10zm-3 12a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm6 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm-3 4c-1.657 0-3-.895-3-2h6c0 1.105-1.343 2-3 2z"
+            />
           </svg>
         </div>
       </div>
@@ -85,10 +127,12 @@ export function GateAnimation() {
           <div className="entity entity-1">
             <div className="entity-glow" />
             <OpenAILogo className="entity-logo" />
+            <SlopVomit active={phase === "approaching"} />
           </div>
           <div className="entity entity-2">
             <div className="entity-glow" />
             <AnthropicLogo className="entity-logo" />
+            <SlopVomit active={phase === "approaching"} />
           </div>
         </div>
       </div>
@@ -117,9 +161,24 @@ export function GateAnimation() {
       {/* Ground cracks from impact */}
       <div className="impact-cracks">
         <svg viewBox="0 0 200 30" preserveAspectRatio="none">
-          <path d="M100 0 L95 15 L85 10 L80 25 L70 20" stroke="currentColor" fill="none" strokeWidth="2"/>
-          <path d="M100 0 L105 15 L115 10 L120 25 L130 20" stroke="currentColor" fill="none" strokeWidth="2"/>
-          <path d="M100 0 L100 20 L95 30" stroke="currentColor" fill="none" strokeWidth="2"/>
+          <path
+            d="M100 0 L95 15 L85 10 L80 25 L70 20"
+            stroke="currentColor"
+            fill="none"
+            strokeWidth="2"
+          />
+          <path
+            d="M100 0 L105 15 L115 10 L120 25 L130 20"
+            stroke="currentColor"
+            fill="none"
+            strokeWidth="2"
+          />
+          <path
+            d="M100 0 L100 20 L95 30"
+            stroke="currentColor"
+            fill="none"
+            strokeWidth="2"
+          />
         </svg>
       </div>
 
@@ -562,11 +621,135 @@ export function GateAnimation() {
           width: 100%;
           height: 100%;
         }
+
+        /* Slop vomit - continuous spray */
+        .slop-container {
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          pointer-events: none;
+          z-index: 3;
+        }
+
+        .slop-particle {
+          position: absolute;
+          opacity: 0;
+          white-space: nowrap;
+          animation: slop-spew var(--duration) ease-out forwards;
+        }
+
+        @keyframes slop-spew {
+          0% {
+            opacity: 0;
+            transform: 
+              rotate(var(--angle)) 
+              translateY(0) 
+              rotate(var(--rotation)) 
+              scale(0.2);
+          }
+          10% {
+            opacity: 1;
+          }
+          60% {
+            opacity: 0.9;
+          }
+          100% {
+            opacity: 0;
+            transform: 
+              rotate(var(--angle)) 
+              translateY(var(--distance)) 
+              rotate(var(--rotation)) 
+              scale(var(--scale));
+          }
+        }
+
+        .slop-particle span {
+          display: block;
+          font-family: 'Courier New', monospace;
+          font-size: clamp(0.45rem, 1.8vw, 0.7rem);
+          font-weight: 600;
+          color: oklch(0.7 0.2 130);
+          background: oklch(0.12 0.06 130 / 0.95);
+          padding: 0.1em 0.35em;
+          border-radius: 2px;
+          border: 1px solid oklch(0.55 0.18 130 / 0.7);
+          box-shadow: 
+            0 0 6px oklch(0.5 0.2 130 / 0.6),
+            0 1px 3px oklch(0 0 0 / 0.4);
+          text-shadow: 0 0 3px oklch(0.8 0.25 130);
+        }
       `}</style>
     </div>
   );
 }
 
 function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function SlopVomit({ active }: { active: boolean }) {
+  const [particles, setParticles] = useState<SlopParticle[]>([]);
+  const idCounter = useCallback(() => Math.random(), []);
+
+  useEffect(() => {
+    if (!active) {
+      setParticles([]);
+      return;
+    }
+
+    const spawnParticle = () => {
+      const particle: SlopParticle = {
+        id: idCounter(),
+        phrase: SLOP_PHRASES[Math.floor(Math.random() * SLOP_PHRASES.length)],
+        angle: -45 + Math.random() * 90,
+        distance: 50 + Math.random() * 100,
+        duration: 1 + Math.random() * 0.8,
+        rotation: -25 + Math.random() * 50,
+        scale: 0.5 + Math.random() * 0.6,
+        createdAt: Date.now(),
+      };
+      setParticles((prev) => [...prev.slice(-20), particle]);
+    };
+
+    // Spawn immediately then on interval
+    spawnParticle();
+    const interval = setInterval(spawnParticle, 150);
+
+    return () => clearInterval(interval);
+  }, [active, idCounter]);
+
+  // Clean up old particles
+  useEffect(() => {
+    if (particles.length === 0) return;
+    const cleanup = setInterval(() => {
+      const now = Date.now();
+      setParticles((prev) => prev.filter((p) => now - p.createdAt < 2000));
+    }, 500);
+    return () => clearInterval(cleanup);
+  }, [particles.length]);
+
+  return (
+    <div className="slop-container">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="slop-particle"
+          style={
+            {
+              "--angle": `${p.angle}deg`,
+              "--distance": `${p.distance}px`,
+              "--duration": `${p.duration}s`,
+              "--rotation": `${p.rotation}deg`,
+              "--scale": p.scale,
+            } as React.CSSProperties
+          }
+        >
+          <span>{p.phrase}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
