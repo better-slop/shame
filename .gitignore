@@ -57,3 +57,4 @@ temp
 .opencode/
 .ralph-lock
 .ralph-state.json
+.ralph-*
