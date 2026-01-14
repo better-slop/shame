@@ -44,4 +44,5 @@ jobs:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           GITHUB_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
           GITHUB_CLIENT_ID: ${{ vars.GH_CLIENT_ID }}
+          GITHUB_WEBHOOK_SECRET: ${{ secrets.GH_WEBHOOK_SECRET }}
         run: bun alchemy deploy --stage ${{ env.STAGE }}
