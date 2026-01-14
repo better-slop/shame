@@ -1,15 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { useTRPC } from "@/utils/trpc";
 
-export const Route = createFileRoute("/dashboard/")({
+export const Route = createFileRoute("/dashboard/")(
+{
   component: DashboardOverview,
 });
 
 function DashboardOverview() {
   const trpc = useTRPC();
   const privateData = useQuery(trpc.privateData.queryOptions());
+  const [showReportForm, setShowReportForm] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -20,6 +23,22 @@ function DashboardOverview() {
         <StatCard label="Reports Filed" value="8" />
         <StatCard label="Network Size" value="1,284" sublabel="repos" />
       </div>
+
+      {/* Report Management Panel */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl">Report Management</h2>
+          <button
+            type="button"
+            onClick={() => setShowReportForm(!showReportForm)}
+            className="px-4 py-2 bg-shame-crimson hover:bg-shame-crimson/90 text-white text-sm font-medium transition-colors"
+            data-testid="create-report"
+          >
+            {showReportForm ? "Cancel" : "Create Report"}
+          </button>
+        </div>
+        {showReportForm && <CreateReportForm onSuccess={() => setShowReportForm(false)} />}
+      </section>
 
       {/* Recent activity */}
       <section>
@@ -145,5 +164,238 @@ function ActivityItem({
       </div>
       <p className="text-xs text-muted-foreground whitespace-nowrap">{time}</p>
     </div>
+  );
+}
+
+type ReasonCode = "ai_spam" | "spam" | "harassment" | "hate" | "phishing" | "malware" | "other";
+
+const REASON_CODE_LABELS: Record<ReasonCode, string> = {
+  ai_spam: "AI Spam",
+  spam: "Spam",
+  harassment: "Harassment",
+  hate: "Hate Speech",
+  phishing: "Phishing",
+  malware: "Malware",
+  other: "Other",
+};
+
+function CreateReportForm({ onSuccess }: { onSuccess: () => void }) {
+  const trpc = useTRPC();
+  const [formData, setFormData] = useState({
+    actorLogin: "",
+    scope: "repo" as "org" | "repo",
+    scopeGithubId: "",
+    scopeLogin: "",
+    action: "flag" as "flag" | "ban",
+    reasonCode: "ai_spam" as ReasonCode,
+    reasonText: "",
+    evidenceUrls: "",
+  });
+
+  const createReport = useMutation(
+    trpc.shame.report.create.mutationOptions({
+      onSuccess: () => {
+        onSuccess();
+        setFormData({
+          actorLogin: "",
+          scope: "repo",
+          scopeGithubId: "",
+          scopeLogin: "",
+          action: "flag",
+          reasonCode: "ai_spam",
+          reasonText: "",
+          evidenceUrls: "",
+        });
+      },
+    }),
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const evidence = formData.evidenceUrls
+      .split("\n")
+      .map((url) => url.trim())
+      .filter(Boolean)
+      .map((url) => ({
+        kind: "other" as const,
+        url,
+      }));
+
+    createReport.mutate({
+      scope: formData.scope,
+      scopeGithubId: Number(formData.scopeGithubId),
+      scopeLogin: formData.scopeLogin,
+      actorGithubUserId: 0, // Will be fetched from GitHub API in production
+      actorLogin: formData.actorLogin,
+      action: formData.action,
+      reasonCode: formData.reasonCode,
+      reasonText: formData.reasonText || undefined,
+      evidence,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-card border border-border p-6 space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="actorLogin" className="block text-sm font-medium mb-2">
+            Actor GitHub Username
+          </label>
+          <input
+            id="actorLogin"
+            name="actorLogin"
+            type="text"
+            required
+            value={formData.actorLogin}
+            onChange={(e) => setFormData({ ...formData, actorLogin: e.target.value })}
+            className="w-full px-3 py-2 bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-shame-crimson"
+            placeholder="username"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="scope" className="block text-sm font-medium mb-2">
+            Scope
+          </label>
+          <select
+            id="scope"
+            name="scope"
+            value={formData.scope}
+            onChange={(e) => setFormData({ ...formData, scope: e.target.value as "org" | "repo" })}
+            className="w-full px-3 py-2 bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-shame-crimson"
+          >
+            <option value="repo">Repository</option>
+            <option value="org">Organization</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="scopeGithubId" className="block text-sm font-medium mb-2">
+            {formData.scope === "repo" ? "Repository" : "Organization"} GitHub ID
+          </label>
+          <input
+            id="scopeGithubId"
+            name="scopeGithubId"
+            type="number"
+            required
+            value={formData.scopeGithubId}
+            onChange={(e) => setFormData({ ...formData, scopeGithubId: e.target.value })}
+            className="w-full px-3 py-2 bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-shame-crimson"
+            placeholder="123456"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="scopeLogin" className="block text-sm font-medium mb-2">
+            {formData.scope === "repo" ? "Repository" : "Organization"} Login/Name
+          </label>
+          <input
+            id="scopeLogin"
+            name="scopeLogin"
+            type="text"
+            required
+            value={formData.scopeLogin}
+            onChange={(e) => setFormData({ ...formData, scopeLogin: e.target.value })}
+            className="w-full px-3 py-2 bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-shame-crimson"
+            placeholder="owner/repo or org-name"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="action" className="block text-sm font-medium mb-2">
+            Action
+          </label>
+          <select
+            id="action"
+            name="action"
+            value={formData.action}
+            onChange={(e) => setFormData({ ...formData, action: e.target.value as "flag" | "ban" })}
+            className="w-full px-3 py-2 bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-shame-crimson"
+          >
+            <option value="flag">Flag</option>
+            <option value="ban">Ban</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="reasonCode" className="block text-sm font-medium mb-2">
+            Reason
+          </label>
+          <select
+            id="reasonCode"
+            name="reasonCode"
+            value={formData.reasonCode}
+            onChange={(e) => setFormData({ ...formData, reasonCode: e.target.value as ReasonCode })}
+            className="w-full px-3 py-2 bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-shame-crimson"
+          >
+            {Object.entries(REASON_CODE_LABELS).map(([code, label]) => (
+              <option key={code} value={code}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="reasonText" className="block text-sm font-medium mb-2">
+          Additional Details (optional)
+        </label>
+        <textarea
+          id="reasonText"
+          name="reasonText"
+          value={formData.reasonText}
+          onChange={(e) => setFormData({ ...formData, reasonText: e.target.value })}
+          className="w-full px-3 py-2 bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-shame-crimson"
+          rows={3}
+          placeholder="Provide additional context..."
+        />
+      </div>
+
+      <div>
+        <label htmlFor="evidenceUrls" className="block text-sm font-medium mb-2">
+          Evidence URLs (one per line)
+        </label>
+        <textarea
+          id="evidenceUrls"
+          name="evidenceUrls"
+          value={formData.evidenceUrls}
+          onChange={(e) => setFormData({ ...formData, evidenceUrls: e.target.value })}
+          className="w-full px-3 py-2 bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-shame-crimson font-mono text-sm"
+          rows={4}
+          placeholder="https://github.com/owner/repo/pull/123&#10;https://github.com/owner/repo/issues/456"
+        />
+      </div>
+
+      <div className="flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={onSuccess}
+          className="px-4 py-2 bg-muted hover:bg-muted/80 text-foreground text-sm font-medium transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={createReport.isPending}
+          className="px-4 py-2 bg-shame-crimson hover:bg-shame-crimson/90 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {createReport.isPending ? "Creating..." : "Create Report"}
+        </button>
+      </div>
+
+      {createReport.isError && (
+        <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-sm">
+          Error: {createReport.error.message}
+        </div>
+      )}
+
+      {createReport.isSuccess && (
+        <div className="p-3 bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 text-sm">
+          Report created successfully!
+        </div>
+      )}
+    </form>
   );
 }
