@@ -54,6 +54,6 @@ temp
 .env
 .env.dev
 .env.prod
-.opencode
+.opencode/
 .ralph-lock
 .ralph-state.json
