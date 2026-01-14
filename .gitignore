@@ -54,3 +54,4 @@ temp
 .env
 .env.dev
 .env.prod
+.opencode
