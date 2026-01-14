@@ -95,8 +95,18 @@ export const server = await Worker("server", {
   },
 });
 
+const docsDomain = isProd ? "docs.shame.bot" : isDev ? "docs-dev.shame.bot" : undefined;
+
+export const docs = await TanStackStart("docs", {
+  cwd: "../../apps/fumadocs",
+  adopt: true,
+  domains: docsDomain ? [docsDomain] : undefined,
+  bindings: {},
+});
+
 console.log(`Web    -> ${web.url}`);
 console.log(`Server -> ${server.url}`);
+console.log(`Docs   -> ${docs.url}`);
 
 // GitHub automation (only for dev/prod stages)
 if (isProd || isDev) {
