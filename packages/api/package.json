@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@bs-shame/config": "workspace:*",
+    "@libsql/client": "catalog:",
     "typescript": "catalog:"
   }
 }
