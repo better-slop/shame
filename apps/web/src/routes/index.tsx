@@ -10,6 +10,7 @@ import { AsciiRenderer } from "@/components/ascii-render";
 import { GithubIcon } from "@/components/icons/github";
 import { GateAnimation } from "@/components/gate-animation";
 import { useTRPC } from "@/utils/trpc";
+import { GITHUB_APP_INSTALL_URL } from "@/lib/config";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -37,10 +38,12 @@ function LandingPage() {
                 maintainers without a nanosecond of thought.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                <Button variant="medieval" size="lg" className="gap-2 text-base px-6">
-                  <GithubIcon className="size-5" />
-                  Install on GitHub
-                </Button>
+                <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+                  <Button variant="medieval" size="lg" className="gap-2 text-base px-6">
+                    <GithubIcon className="size-5" />
+                    Install on GitHub
+                  </Button>
+                </a>
                 <Link to="/wall">
                   <Button variant="medieval" size="xl" className="text-base px-6 -bg-linear-180">
                     View The Wall
@@ -126,10 +129,12 @@ function LandingPage() {
             Join the network. One install protects you from the entire crowdsourced list of bad
             actors.
           </p>
-          <Button variant="medieval" size="lg" className="gap-2 text-base px-6">
-            <GithubIcon className="size-5" />
-            Install on GitHub
-          </Button>
+          <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+            <Button variant="medieval" size="lg" className="gap-2 text-base px-6">
+              <GithubIcon className="size-5" />
+              Install on GitHub
+            </Button>
+          </a>
         </div>
       </section>
 
