@@ -41,7 +41,7 @@ const webUrl = webDomain ? `https://${webDomain}` : undefined;
 const apiUrl = apiDomain ? `https://${apiDomain}` : undefined;
 
 const corsOrigin = webUrl ?? requireValue(alchemy.env.CORS_ORIGIN, "CORS_ORIGIN");
-const betterAuthUrl = webUrl ?? requireValue(alchemy.env.BETTER_AUTH_URL, "BETTER_AUTH_URL");
+const betterAuthUrl = apiUrl ?? requireValue(alchemy.env.BETTER_AUTH_URL, "BETTER_AUTH_URL");
 const viteServerUrl = apiUrl ?? requireValue(alchemy.env.VITE_SERVER_URL, "VITE_SERVER_URL");
 const betterAuthSecret = requireValue(
   alchemy.secret.env.BETTER_AUTH_SECRET,
