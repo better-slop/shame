@@ -20,6 +20,7 @@ type ShameEntry = {
   reportCount: number;
   firstReported: string;
   lastReported: string;
+  score: number;
   sources: Array<{
     repo: string;
     type: ShameEvidenceKind;
@@ -73,18 +74,23 @@ function ShameEntryCard({ entry }: { entry: ShameEntry }) {
                 </svg>
               </div>
             )}
-            <div>
+            <div className="flex-1">
               <StoneCardTitle>{entry.username}</StoneCardTitle>
               <StoneCardMeta>First reported {formatDate(entry.firstReported)}</StoneCardMeta>
             </div>
+            <div className="flex flex-col items-end gap-1">
+              <ShameBadge count={entry.reportCount}>
+                {severityLevel === "banned"
+                  ? "BANNED"
+                  : severityLevel === "flagged"
+                    ? "FLAGGED"
+                    : "WARNED"}
+              </ShameBadge>
+              <span className="text-xs text-muted-foreground font-mono">
+                Score: {entry.score.toFixed(2)}
+              </span>
+            </div>
           </div>
-          <ShameBadge count={entry.reportCount}>
-            {severityLevel === "banned"
-              ? "BANNED"
-              : severityLevel === "flagged"
-                ? "FLAGGED"
-                : "WARNED"}
-          </ShameBadge>
         </StoneCardHeader>
 
         <StoneCardContent>

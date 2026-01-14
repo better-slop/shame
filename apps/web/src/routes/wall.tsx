@@ -13,7 +13,7 @@ export const Route = createFileRoute("/wall")({
 function WallPage() {
   const trpc = useTRPC();
   const { data, isLoading } = useQuery(
-    trpc.shame.wall.list.queryOptions({ limit: 50, offset: 0, sort: "recent" }),
+    trpc.shame.wall.list.queryOptions({ limit: 50, offset: 0, sort: "score" }),
   );
 
   return (

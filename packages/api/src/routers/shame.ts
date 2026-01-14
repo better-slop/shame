@@ -21,6 +21,7 @@ import {
 } from "@bs-shame/db/schema/shame";
 
 import { publicProcedure, router } from "../index";
+import { computeActorScore, type ReportWithMeta } from "../scoring/shame-score";
 
 type PolicyConfig = {
   mode: ShameOrgPolicyMode;
@@ -478,7 +479,15 @@ const reportRouter = router({
         actorGithubUserId: z.number(),
         actorLogin: z.string(),
         action: z.enum(["flag", "ban"]),
-        reasonCode: z.enum(["ai_spam", "spam", "harassment", "hate", "phishing", "malware", "other"]),
+        reasonCode: z.enum([
+          "ai_spam",
+          "spam",
+          "harassment",
+          "hate",
+          "phishing",
+          "malware",
+          "other",
+        ]),
         reasonText: z.string().optional(),
         visibility: z.enum(["public", "private"]).default("public"),
         evidence: z
@@ -671,9 +680,14 @@ const enforcementRouter = router({
           actorGithubUserId: z.number().optional(),
           revokedByUserId: z.string().optional(),
         })
-        .refine((data) => data.enforcementId || (data.scope && data.scopeGithubId && data.actorGithubUserId), {
-          message: "Either enforcementId or (scope, scopeGithubId, actorGithubUserId) must be provided",
-        }),
+        .refine(
+          (data) =>
+            data.enforcementId || (data.scope && data.scopeGithubId && data.actorGithubUserId),
+          {
+            message:
+              "Either enforcementId or (scope, scopeGithubId, actorGithubUserId) must be provided",
+          },
+        ),
     )
     .mutation(async ({ input, ctx }) => {
       const userId = input.revokedByUserId ?? ctx.session?.user?.id;
@@ -717,7 +731,7 @@ const wallRouter = router({
       z.object({
         limit: z.number().min(1).max(100).default(20),
         offset: z.number().min(0).default(0),
-        sort: z.enum(["recent", "reports", "oldest"]).default("recent"),
+        sort: z.enum(["recent", "reports", "oldest", "score"]).default("score"),
       }),
     )
     .query(async ({ input }) => {
@@ -731,22 +745,67 @@ const wallRouter = router({
         })
         .from(shameReport)
         .where(eq(shameReport.visibility, "public"))
-        .groupBy(shameReport.actorGithubUserId)
-        .orderBy(
-          input.sort === "reports"
-            ? desc(sql`COUNT(DISTINCT ${shameReport.scope} || ':' || ${shameReport.scopeGithubId})`)
-            : input.sort === "oldest"
-              ? sql`MIN(${shameReport.createdAt})`
-              : desc(sql`MAX(${shameReport.createdAt})`),
-        )
-        .limit(input.limit)
-        .offset(input.offset);
+        .groupBy(shameReport.actorGithubUserId);
 
       if (actorStats.length === 0) {
         return { entries: [], total: 0 };
       }
 
-      const actorIds = actorStats.map((s) => s.actorGithubUserId);
+      const allActorIds = actorStats.map((s) => s.actorGithubUserId);
+
+      // Fetch all reports for score calculation
+      const allReports = await db.query.shameReport.findMany({
+        where: and(
+          inArray(shameReport.actorGithubUserId, allActorIds),
+          eq(shameReport.visibility, "public"),
+        ),
+      });
+
+      // Group reports by actor for score calculation
+      const reportsByActor = new Map<number, typeof allReports>();
+      for (const report of allReports) {
+        const list = reportsByActor.get(report.actorGithubUserId) ?? [];
+        list.push(report);
+        reportsByActor.set(report.actorGithubUserId, list);
+      }
+
+      // Compute scores for each actor
+      const actorScores = new Map<number, number>();
+      for (const [actorId, reports] of reportsByActor) {
+        const reportsWithMeta: ReportWithMeta[] = reports.map((r) => ({
+          id: r.id,
+          action: r.action,
+          scope: r.scope,
+          scopeGithubId: r.scopeGithubId,
+          createdAt: new Date(r.createdAt),
+          repoStars: 0, // TODO: fetch from GitHub API or store in DB
+          repoContributors: 0, // TODO: fetch from GitHub API or store in DB
+          reporterIsMaintainer: false, // TODO: determine from GitHub permissions
+        }));
+        const score = computeActorScore(reportsWithMeta);
+        actorScores.set(actorId, score);
+      }
+
+      // Sort actor stats based on input.sort
+      let sortedStats = [...actorStats];
+      if (input.sort === "score") {
+        sortedStats.sort((a, b) => {
+          const scoreA = actorScores.get(a.actorGithubUserId) ?? 0;
+          const scoreB = actorScores.get(b.actorGithubUserId) ?? 0;
+          return scoreB - scoreA; // Highest score first
+        });
+      } else if (input.sort === "reports") {
+        sortedStats.sort((a, b) => Number(b.reportCount) - Number(a.reportCount));
+      } else if (input.sort === "oldest") {
+        sortedStats.sort((a, b) => a.firstReported - b.firstReported);
+      } else {
+        // "recent"
+        sortedStats.sort((a, b) => b.lastReported - a.lastReported);
+      }
+
+      // Apply pagination after sorting
+      const paginatedStats = sortedStats.slice(input.offset, input.offset + input.limit);
+      const actorIds = paginatedStats.map((s) => s.actorGithubUserId);
 
       // Fetch actor details
       const actors = await db.query.shameActor.findMany({
@@ -818,18 +877,13 @@ const wallRouter = router({
         }
       }
 
-      // Get total count
-      const totalResult = await db
-        .select({ count: sql<number>`COUNT(DISTINCT ${shameReport.actorGithubUserId})` })
-        .from(shameReport)
-        .where(eq(shameReport.visibility, "public"));
-
       const actorMap = new Map(actors.map((a) => [a.githubUserId, a]));
 
-      const entries = actorStats.map((stat) => {
+      const entries = paginatedStats.map((stat) => {
         const actor = actorMap.get(stat.actorGithubUserId);
         const latestReport = latestReportByActor.get(stat.actorGithubUserId);
         const sources = sourcesByActor.get(stat.actorGithubUserId) ?? [];
+        const score = actorScores.get(stat.actorGithubUserId) ?? 0;
 
         return {
           id: String(stat.actorGithubUserId),
@@ -840,12 +894,13 @@ const wallRouter = router({
           firstReported: new Date(stat.firstReported).toISOString().split("T")[0],
           lastReported: new Date(stat.lastReported).toISOString().split("T")[0],
           sources,
+          score: Math.round(score * 100) / 100, // Round to 2 decimal places
         };
       });
 
       return {
         entries,
-        total: Number(totalResult[0]?.count ?? 0),
+        total: actorStats.length,
       };
     }),
 });
