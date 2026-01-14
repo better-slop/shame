@@ -21,20 +21,14 @@ const requireValue = <T>(value: T | undefined, name: string): T => {
 
 const app = await alchemy("bs-shame", {
   stage,
-  stateStore: process.env.CI
-    ? (scope) => new CloudflareStateStore(scope)
-    : undefined,
+  stateStore: process.env.CI ? (scope) => new CloudflareStateStore(scope) : undefined,
 });
 const isProd = stage === "prod";
 const isDev = stage === "dev";
 
 // Domain configuration per stage
 const webDomain = isProd ? "shame.bot" : isDev ? "dev.shame.bot" : undefined;
-const apiDomain = isProd
-  ? "api.shame.bot"
-  : isDev
-    ? "api-dev.shame.bot"
-    : undefined;
+const apiDomain = isProd ? "api.shame.bot" : isDev ? "api-dev.shame.bot" : undefined;
 
 // URLs for bindings
 const webUrl = webDomain ? `https://${webDomain}` : undefined;
@@ -43,26 +37,23 @@ const apiUrl = apiDomain ? `https://${apiDomain}` : undefined;
 const corsOrigin = webUrl ?? requireValue(alchemy.env.CORS_ORIGIN, "CORS_ORIGIN");
 const betterAuthUrl = apiUrl ?? requireValue(alchemy.env.BETTER_AUTH_URL, "BETTER_AUTH_URL");
 const viteServerUrl = apiUrl ?? requireValue(alchemy.env.VITE_SERVER_URL, "VITE_SERVER_URL");
-const betterAuthSecret = requireValue(
-  alchemy.secret.env.BETTER_AUTH_SECRET,
-  "BETTER_AUTH_SECRET",
-);
-const githubClientId = requireValue(
-  alchemy.env.GITHUB_CLIENT_ID,
-  "GITHUB_CLIENT_ID",
-);
+const betterAuthSecret = requireValue(alchemy.secret.env.BETTER_AUTH_SECRET, "BETTER_AUTH_SECRET");
+const githubClientId = requireValue(alchemy.env.GITHUB_CLIENT_ID, "GITHUB_CLIENT_ID");
 const githubClientSecret = requireValue(
   alchemy.secret.env.GITHUB_CLIENT_SECRET,
   "GITHUB_CLIENT_SECRET",
 );
-const alchemyPassword = requireValue(
-  alchemy.secret.env.ALCHEMY_PASSWORD,
-  "ALCHEMY_PASSWORD",
-);
+const alchemyPassword = requireValue(alchemy.secret.env.ALCHEMY_PASSWORD, "ALCHEMY_PASSWORD");
 const alchemyStateToken = requireValue(
   alchemy.secret.env.ALCHEMY_STATE_TOKEN,
   "ALCHEMY_STATE_TOKEN",
 );
+const githubWebhookSecret = requireValue(
+  alchemy.secret.env.GITHUB_WEBHOOK_SECRET,
+  "GITHUB_WEBHOOK_SECRET",
+);
+const githubAppId = alchemy.env.GITHUB_APP_ID;
+const githubAppPrivateKey = alchemy.secret.env.GITHUB_APP_PRIVATE_KEY;
 
 const db = await D1Database("database", {
   migrationsDir: "../../packages/db/src/migrations",
@@ -95,6 +86,9 @@ export const server = await Worker("server", {
     BETTER_AUTH_URL: betterAuthUrl,
     GITHUB_CLIENT_ID: githubClientId,
     GITHUB_CLIENT_SECRET: githubClientSecret,
+    GITHUB_WEBHOOK_SECRET: githubWebhookSecret,
+    ...(githubAppId && { GITHUB_APP_ID: githubAppId }),
+    ...(githubAppPrivateKey && { GITHUB_APP_PRIVATE_KEY: githubAppPrivateKey }),
   },
   dev: {
     port: 3000,

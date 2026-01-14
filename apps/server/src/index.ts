@@ -6,6 +6,7 @@ import { trpcServer } from "@hono/trpc-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { githubWebhookHandler } from "./webhooks/github";
 
 const app = new Hono();
 
@@ -21,6 +22,8 @@ app.use(
 );
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+
+app.post("/github/webhook", githubWebhookHandler);
 
 app.use(
   "/trpc/*",
