@@ -1,10 +1,5 @@
 import alchemy from "alchemy";
-import {
-  AccountApiToken,
-  D1Database,
-  TanStackStart,
-  Worker,
-} from "alchemy/cloudflare";
+import { D1Database, TanStackStart, Worker } from "alchemy/cloudflare";
 import { GitHubSecret, RepositoryEnvironment } from "alchemy/github";
 import { CloudflareStateStore } from "alchemy/state";
 import { config } from "dotenv";
@@ -71,10 +66,12 @@ const alchemyStateToken = requireValue(
 
 const db = await D1Database("database", {
   migrationsDir: "../../packages/db/src/migrations",
+  adopt: true,
 });
 
 export const web = await TanStackStart("web", {
   cwd: "../../apps/web",
+  adopt: true,
   domains: webDomain ? [webDomain] : undefined,
   bindings: {
     VITE_SERVER_URL: viteServerUrl,
@@ -89,6 +86,7 @@ export const server = await Worker("server", {
   cwd: "../../apps/server",
   entrypoint: "src/index.ts",
   compatibility: "node",
+  adopt: true,
   domains: apiDomain ? [apiDomain] : undefined,
   bindings: {
     DB: db,
@@ -123,33 +121,13 @@ if (isProd || isDev) {
   });
 
   // Create scoped Cloudflare API token for CI
-  const cfToken = await AccountApiToken(`cf-token-${stage}`, {
-    name: `bs-shame-${stage}-deploy`,
-    policies: [
-      {
-        effect: "allow",
-        resources: { "com.cloudflare.api.account.*": "*" },
-        permissionGroups: [
-          "Workers Scripts Write",
-          "Workers Routes Write",
-          "D1 Write",
-          "Account Settings Read",
-        ],
-      },
-      {
-        effect: "allow",
-        resources: { "com.cloudflare.api.account.zone.*": "*" },
-        permissionGroups: ["Zone Read", "DNS Write"],
-      },
-    ],
-  });
-
   // Push secrets to GitHub environment
+  // Using existing CLOUDFLARE_API_TOKEN instead of minting new AccountApiToken
   await GitHubSecret(`gh-secret-cf-token-${stage}`, {
     owner,
     repository,
     name: "CLOUDFLARE_API_TOKEN",
-    value: cfToken.value!,
+    value: alchemy.secret(process.env.CLOUDFLARE_API_TOKEN!),
     environment: envName,
   });
 
@@ -180,8 +158,8 @@ if (isProd || isDev) {
   await GitHubSecret(`gh-secret-gh-client-secret-${stage}`, {
     owner,
     repository,
-    name: "GITHUB_CLIENT_SECRET",
-    value: githubClientSecret,
+    name: "GH_CLIENT_SECRET",
+    value: alchemy.secret(process.env.GITHUB_CLIENT_SECRET!),
     environment: envName,
   });
 
