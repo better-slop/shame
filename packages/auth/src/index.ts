@@ -4,6 +4,8 @@ import { env } from "@bs-shame/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
+const isShameBot = new URL(env.BETTER_AUTH_URL).hostname.endsWith("shame.bot");
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "sqlite",
@@ -34,11 +36,11 @@ export const auth = betterAuth({
       secure: true,
       httpOnly: true,
     },
-    // uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
-    // https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
-    // crossSubDomainCookies: {
-    //   enabled: true,
-    //   domain: "<your-workers-subdomain>",
-    // },
+    ...(isShameBot && {
+      crossSubDomainCookies: {
+        enabled: true,
+        domain: ".shame.bot",
+      },
+    }),
   },
 });
