@@ -48,10 +48,14 @@ const alchemyStateToken = requireValue(
   alchemy.secret.env.ALCHEMY_STATE_TOKEN,
   "ALCHEMY_STATE_TOKEN",
 );
-const githubWebhookSecret = requireValue(
-  alchemy.secret.env.GITHUB_WEBHOOK_SECRET,
-  "GITHUB_WEBHOOK_SECRET",
-);
+// Optional: GITHUB_WEBHOOK_SECRET (webhook handler has fallback if not set)
+let githubWebhookSecret: typeof alchemy.secret.env.GITHUB_WEBHOOK_SECRET | undefined;
+try {
+  githubWebhookSecret = alchemy.secret.env.GITHUB_WEBHOOK_SECRET;
+} catch {
+  console.warn("GITHUB_WEBHOOK_SECRET not set - webhook signature verification will be disabled");
+}
+
 const githubAppId = alchemy.env.GITHUB_APP_ID;
 const githubAppPrivateKey = alchemy.secret.env.GITHUB_APP_PRIVATE_KEY;
 
@@ -86,7 +90,7 @@ export const server = await Worker("server", {
     BETTER_AUTH_URL: betterAuthUrl,
     GITHUB_CLIENT_ID: githubClientId,
     GITHUB_CLIENT_SECRET: githubClientSecret,
-    GITHUB_WEBHOOK_SECRET: githubWebhookSecret,
+    ...(githubWebhookSecret && { GITHUB_WEBHOOK_SECRET: githubWebhookSecret }),
     ...(githubAppId && { GITHUB_APP_ID: githubAppId }),
     ...(githubAppPrivateKey && { GITHUB_APP_PRIVATE_KEY: githubAppPrivateKey }),
   },
