@@ -15,6 +15,14 @@ function DashboardOverview() {
   const [showReportForm, setShowReportForm] = useState(false);
   const [showPolicyForm, setShowPolicyForm] = useState(false);
 
+  // TODO: Replace with actual org/repo IDs from user context
+  const githubOwnerId = 123456;
+  const dashboardData = useQuery(
+    trpc.shame.org.dashboard.queryOptions({
+      githubOwnerId,
+    }),
+  );
+
   return (
     <div className="space-y-6">
       {/* Stats row */}
@@ -39,6 +47,25 @@ function DashboardOverview() {
           </button>
         </div>
         {showPolicyForm && <PolicyControlsForm onSuccess={() => setShowPolicyForm(false)} />}
+      </section>
+
+      {/* Recommendations Panel */}
+      <section>
+        <h2 className="text-xl mb-4">Recommendations</h2>
+        {dashboardData.isLoading ? (
+          <div className="bg-card border border-border p-6 text-center text-muted-foreground">
+            Loading recommendations...
+          </div>
+        ) : dashboardData.error ? (
+          <div className="bg-card border border-border p-6 text-center text-red-600 dark:text-red-400">
+            Error loading recommendations: {dashboardData.error.message}
+          </div>
+        ) : (
+          <RecommendationsPanel
+            recommendations={dashboardData.data?.recommendations ?? []}
+            githubOwnerId={githubOwnerId}
+          />
+        )}
       </section>
 
       {/* Report Management Panel */}
@@ -608,5 +635,190 @@ function CreateReportForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
       )}
     </form>
+  );
+}
+
+type Recommendation = {
+  actor: {
+    githubUserId: number;
+    login: string;
+    avatarUrl: string | null;
+  };
+  banCount: number;
+  flagCount: number;
+  shouldBan: boolean;
+  shouldFlag: boolean;
+};
+
+function RecommendationsPanel({
+  recommendations,
+  githubOwnerId,
+}: {
+  recommendations: Recommendation[];
+  githubOwnerId: number;
+}) {
+  const trpc = useTRPC();
+  const [dismissedActors, setDismissedActors] = useState<Set<number>>(new Set());
+
+  const setEnforcement = useMutation(
+    trpc.shame.enforcement.set.mutationOptions({
+      onSuccess: (_, variables) => {
+        setDismissedActors((prev) => new Set(prev).add(variables.actorGithubUserId));
+      },
+    }),
+  );
+
+  const filteredRecommendations = recommendations.filter(
+    (rec) => !dismissedActors.has(rec.actor.githubUserId),
+  );
+
+  if (filteredRecommendations.length === 0) {
+    return (
+      <div className="bg-card border border-border p-6 text-center text-muted-foreground">
+        No recommendations at this time. All actors are below policy thresholds.
+      </div>
+    );
+  }
+
+  const handleAction = (rec: Recommendation, action: "flag" | "ban") => {
+    setEnforcement.mutate({
+      scope: "org",
+      scopeGithubId: githubOwnerId,
+      scopeLogin: "", // TODO: Get from context
+      actorGithubUserId: rec.actor.githubUserId,
+      actorLogin: rec.actor.login,
+      status: action,
+      source: "manual",
+    });
+  };
+
+  const handleDismiss = (actorGithubUserId: number) => {
+    setDismissedActors((prev) => new Set(prev).add(actorGithubUserId));
+  };
+
+  return (
+    <div className="bg-card border border-border">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Actor
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Score
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Status
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {filteredRecommendations.map((rec) => (
+              <tr key={rec.actor.githubUserId} className="hover:bg-muted/30 transition-colors">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    {rec.actor.avatarUrl ? (
+                      <img
+                        src={rec.actor.avatarUrl}
+                        alt={rec.actor.login}
+                        className="size-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="size-8 rounded-full bg-muted flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground">
+                          {rec.actor.login[0]?.toUpperCase() ?? "?"}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{rec.actor.login}</p>
+                      <p className="text-xs text-muted-foreground">ID: {rec.actor.githubUserId}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Bans:</span>
+                      <span className="text-sm font-medium text-shame-crimson">
+                        {rec.banCount}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Flags:</span>
+                      <span className="text-sm font-medium text-shame-gold">{rec.flagCount}</span>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-col gap-1">
+                    {rec.shouldBan && (
+                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-shame-crimson/10 text-shame-crimson border border-shame-crimson/30">
+                        Should Ban
+                      </span>
+                    )}
+                    {rec.shouldFlag && !rec.shouldBan && (
+                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-shame-gold/10 text-shame-gold border border-shame-gold/30">
+                        Should Flag
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-2">
+                    {rec.shouldFlag && (
+                      <button
+                        type="button"
+                        onClick={() => handleAction(rec, "flag")}
+                        disabled={setEnforcement.isPending}
+                        className="px-3 py-1 text-xs font-medium bg-shame-gold hover:bg-shame-gold/90 text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        data-testid="flag-actor"
+                      >
+                        Flag
+                      </button>
+                    )}
+                    {rec.shouldBan && (
+                      <button
+                        type="button"
+                        onClick={() => handleAction(rec, "ban")}
+                        disabled={setEnforcement.isPending}
+                        className="px-3 py-1 text-xs font-medium bg-shame-crimson hover:bg-shame-crimson/90 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        data-testid="ban-actor"
+                      >
+                        Ban
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDismiss(rec.actor.githubUserId)}
+                      className="px-3 py-1 text-xs font-medium bg-muted hover:bg-muted/80 text-foreground transition-colors"
+                      data-testid="dismiss-actor"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {setEnforcement.isError && (
+        <div className="p-3 bg-red-500/10 border-t border-red-500/30 text-red-600 dark:text-red-400 text-sm">
+          Error: {setEnforcement.error.message}
+        </div>
+      )}
+
+      {setEnforcement.isSuccess && (
+        <div className="p-3 bg-green-500/10 border-t border-green-500/30 text-green-600 dark:text-green-400 text-sm">
+          Enforcement action applied successfully!
+        </div>
+      )}
+    </div>
   );
 }
