@@ -49,10 +49,10 @@ const alchemyStateToken = requireValue(
   "ALCHEMY_STATE_TOKEN",
 );
 // Optional: GITHUB_WEBHOOK_SECRET (webhook handler has fallback if not set)
-let githubWebhookSecret: typeof alchemy.secret.env.GITHUB_WEBHOOK_SECRET | undefined;
-try {
-  githubWebhookSecret = alchemy.secret.env.GITHUB_WEBHOOK_SECRET;
-} catch {
+const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET
+  ? alchemy.secret.env.GITHUB_WEBHOOK_SECRET
+  : undefined;
+if (!githubWebhookSecret) {
   console.warn("GITHUB_WEBHOOK_SECRET not set - webhook signature verification will be disabled");
 }
 
