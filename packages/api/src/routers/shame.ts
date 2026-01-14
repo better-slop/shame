@@ -250,6 +250,80 @@ const policyRouter = router({
     .query(async ({ input }) => {
       return getEffectivePolicyInternal(input.githubOwnerId, input.githubRepoId);
     }),
+
+  setOrg: publicProcedure
+    .input(
+      z.object({
+        githubOwnerId: z.number(),
+        mode: z.enum(["manual", "auto"]),
+        flagAt: z.number().min(1),
+        banAt: z.number().min(1),
+        createdByUserId: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = input.createdByUserId ?? ctx.session?.user?.id;
+
+      const [policy] = await db
+        .insert(shamePolicyOrg)
+        .values({
+          githubOwnerId: input.githubOwnerId,
+          mode: input.mode,
+          flagAt: input.flagAt,
+          banAt: input.banAt,
+          createdByUserId: userId,
+        })
+        .onConflictDoUpdate({
+          target: shamePolicyOrg.githubOwnerId,
+          set: {
+            mode: input.mode,
+            flagAt: input.flagAt,
+            banAt: input.banAt,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      return policy;
+    }),
+
+  setRepo: publicProcedure
+    .input(
+      z.object({
+        githubRepoId: z.number(),
+        githubOwnerId: z.number(),
+        mode: z.enum(["inherit", "manual", "auto"]),
+        flagAt: z.number().min(1),
+        banAt: z.number().min(1),
+        createdByUserId: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = input.createdByUserId ?? ctx.session?.user?.id;
+
+      const [policy] = await db
+        .insert(shamePolicyRepo)
+        .values({
+          githubRepoId: input.githubRepoId,
+          githubOwnerId: input.githubOwnerId,
+          mode: input.mode,
+          flagAt: input.flagAt,
+          banAt: input.banAt,
+          createdByUserId: userId,
+        })
+        .onConflictDoUpdate({
+          target: shamePolicyRepo.githubRepoId,
+          set: {
+            mode: input.mode,
+            flagAt: input.flagAt,
+            banAt: input.banAt,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      return policy;
+    }),
 });
 
 const actorRouter = router({
@@ -391,6 +465,249 @@ const actorRouter = router({
         },
         viewerContext: viewerResult,
       };
+    }),
+});
+
+const reportRouter = router({
+  create: publicProcedure
+    .input(
+      z.object({
+        scope: z.enum(["org", "repo"]),
+        scopeGithubId: z.number(),
+        scopeLogin: z.string(),
+        actorGithubUserId: z.number(),
+        actorLogin: z.string(),
+        action: z.enum(["flag", "ban"]),
+        reasonCode: z.enum(["ai_spam", "spam", "harassment", "hate", "phishing", "malware", "other"]),
+        reasonText: z.string().optional(),
+        visibility: z.enum(["public", "private"]).default("public"),
+        evidence: z
+          .array(
+            z.object({
+              kind: z.enum([
+                "pr",
+                "issue",
+                "comment",
+                "review_comment",
+                "commit",
+                "discussion",
+                "profile",
+                "other",
+              ]),
+              url: z.string().url(),
+              githubRepoId: z.number().optional(),
+              githubNumber: z.number().optional(),
+              githubCommentId: z.number().optional(),
+              githubNodeId: z.string().optional(),
+            }),
+          )
+          .default([]),
+        createdByUserId: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = input.createdByUserId ?? ctx.session?.user?.id;
+
+      // Upsert actor
+      await db
+        .insert(shameActor)
+        .values({
+          githubUserId: input.actorGithubUserId,
+          login: input.actorLogin,
+        })
+        .onConflictDoUpdate({
+          target: shameActor.githubUserId,
+          set: {
+            login: input.actorLogin,
+            updatedAt: new Date(),
+          },
+        });
+
+      // Upsert actor login history
+      await db
+        .insert(shameActorLogin)
+        .values({
+          actorGithubUserId: input.actorGithubUserId,
+          login: input.actorLogin,
+        })
+        .onConflictDoUpdate({
+          target: [shameActorLogin.actorGithubUserId, shameActorLogin.login],
+          set: {
+            lastSeenAt: new Date(),
+          },
+        });
+
+      // Generate report ID: scope:scopeGithubId:actorGithubUserId
+      const reportId = `${input.scope}:${input.scopeGithubId}:${input.actorGithubUserId}`;
+
+      // Upsert report
+      const [report] = await db
+        .insert(shameReport)
+        .values({
+          id: reportId,
+          scope: input.scope,
+          scopeGithubId: input.scopeGithubId,
+          scopeLogin: input.scopeLogin,
+          actorGithubUserId: input.actorGithubUserId,
+          actorLogin: input.actorLogin,
+          action: input.action,
+          reasonCode: input.reasonCode,
+          reasonText: input.reasonText,
+          visibility: input.visibility,
+          createdByUserId: userId,
+        })
+        .onConflictDoUpdate({
+          target: [shameReport.scope, shameReport.scopeGithubId, shameReport.actorGithubUserId],
+          set: {
+            action: input.action,
+            reasonCode: input.reasonCode,
+            reasonText: input.reasonText,
+            visibility: input.visibility,
+            actorLogin: input.actorLogin,
+            scopeLogin: input.scopeLogin,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      // Insert evidence
+      if (input.evidence.length > 0) {
+        await db.insert(shameEvidence).values(
+          input.evidence.map((e) => ({
+            reportId,
+            kind: e.kind,
+            url: e.url,
+            githubRepoId: e.githubRepoId,
+            githubNumber: e.githubNumber,
+            githubCommentId: e.githubCommentId,
+            githubNodeId: e.githubNodeId,
+          })),
+        );
+      }
+
+      return report;
+    }),
+});
+
+const enforcementRouter = router({
+  set: publicProcedure
+    .input(
+      z.object({
+        scope: z.enum(["org", "repo"]),
+        scopeGithubId: z.number(),
+        scopeLogin: z.string(),
+        actorGithubUserId: z.number(),
+        actorLogin: z.string(),
+        status: z.enum(["flag", "ban"]),
+        source: z.enum(["manual", "auto"]).default("manual"),
+        createdByUserId: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = input.createdByUserId ?? ctx.session?.user?.id;
+
+      // Ensure actor exists
+      await db
+        .insert(shameActor)
+        .values({
+          githubUserId: input.actorGithubUserId,
+          login: input.actorLogin,
+        })
+        .onConflictDoUpdate({
+          target: shameActor.githubUserId,
+          set: {
+            login: input.actorLogin,
+            updatedAt: new Date(),
+          },
+        });
+
+      // Generate enforcement ID: scope:scopeGithubId:actorGithubUserId
+      const enforcementId = `${input.scope}:${input.scopeGithubId}:${input.actorGithubUserId}`;
+
+      // Upsert enforcement
+      const [enforcement] = await db
+        .insert(shameEnforcement)
+        .values({
+          id: enforcementId,
+          scope: input.scope,
+          scopeGithubId: input.scopeGithubId,
+          scopeLogin: input.scopeLogin,
+          actorGithubUserId: input.actorGithubUserId,
+          actorLogin: input.actorLogin,
+          status: input.status,
+          source: input.source,
+          active: true,
+          createdByUserId: userId,
+        })
+        .onConflictDoUpdate({
+          target: [
+            shameEnforcement.scope,
+            shameEnforcement.scopeGithubId,
+            shameEnforcement.actorGithubUserId,
+          ],
+          set: {
+            status: input.status,
+            source: input.source,
+            active: true,
+            actorLogin: input.actorLogin,
+            scopeLogin: input.scopeLogin,
+            revokedAt: null,
+            revokedByUserId: null,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      return enforcement;
+    }),
+
+  revoke: publicProcedure
+    .input(
+      z
+        .object({
+          enforcementId: z.string().optional(),
+          scope: z.enum(["org", "repo"]).optional(),
+          scopeGithubId: z.number().optional(),
+          actorGithubUserId: z.number().optional(),
+          revokedByUserId: z.string().optional(),
+        })
+        .refine((data) => data.enforcementId || (data.scope && data.scopeGithubId && data.actorGithubUserId), {
+          message: "Either enforcementId or (scope, scopeGithubId, actorGithubUserId) must be provided",
+        }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = input.revokedByUserId ?? ctx.session?.user?.id;
+
+      let whereCondition;
+      if (input.enforcementId) {
+        whereCondition = eq(shameEnforcement.id, input.enforcementId);
+      } else {
+        whereCondition = and(
+          eq(shameEnforcement.scope, input.scope!),
+          eq(shameEnforcement.scopeGithubId, input.scopeGithubId!),
+          eq(shameEnforcement.actorGithubUserId, input.actorGithubUserId!),
+        );
+      }
+
+      const [enforcement] = await db
+        .update(shameEnforcement)
+        .set({
+          active: false,
+          revokedAt: new Date(),
+          revokedByUserId: userId,
+          updatedAt: new Date(),
+        })
+        .where(whereCondition)
+        .returning();
+
+      if (!enforcement) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Enforcement not found",
+        });
+      }
+
+      return enforcement;
     }),
 });
 
@@ -726,4 +1043,6 @@ export const shameRouter = router({
   actor: actorRouter,
   org: orgRouter,
   wall: wallRouter,
+  report: reportRouter,
+  enforcement: enforcementRouter,
 });
