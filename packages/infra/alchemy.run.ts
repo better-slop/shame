@@ -56,8 +56,18 @@ if (!githubWebhookSecret) {
   console.warn("GITHUB_WEBHOOK_SECRET not set - webhook signature verification will be disabled");
 }
 
-const githubAppId = alchemy.env.GITHUB_APP_ID;
-const githubAppPrivateKey = alchemy.secret.env.GITHUB_APP_PRIVATE_KEY;
+const githubAppIdValue = process.env.GITHUB_APP_ID;
+const githubAppPrivateKeyValue = process.env.GITHUB_APP_PRIVATE_KEY;
+const hasGithubAppConfig = Boolean(githubAppIdValue && githubAppPrivateKeyValue);
+
+const githubAppId = hasGithubAppConfig ? githubAppIdValue : undefined;
+const githubAppPrivateKey = hasGithubAppConfig
+  ? alchemy.secret(githubAppPrivateKeyValue)
+  : undefined;
+
+if (!hasGithubAppConfig && (githubAppIdValue || githubAppPrivateKeyValue)) {
+  console.warn("GITHUB_APP_ID/GITHUB_APP_PRIVATE_KEY not both set - GitHub App features disabled");
+}
 
 const db = await D1Database("database", {
   migrationsDir: "../../packages/db/src/migrations",
