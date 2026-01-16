@@ -5,6 +5,9 @@
     ".": {
       "default": "./src/index.ts"
     },
+    "./workflows": {
+      "default": "./src/workflows/index.ts"
+    },
     "./*": {
       "default": "./src/*.ts"
     }

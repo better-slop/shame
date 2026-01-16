@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { ScopePicker } from "@/components/scope-picker";
 import { useTheme, type Theme } from "@/components/theme-switcher";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -40,25 +41,6 @@ const NAV_ITEMS: NavItem[] = [
           strokeLinecap="round"
           strokeLinejoin="round"
           d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"
-        />
-      </svg>
-    ),
-  },
-  {
-    label: "The Wall",
-    href: "/dashboard/wall",
-    icon: (
-      <svg
-        className="size-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={1.5}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
         />
       </svg>
     ),
@@ -239,6 +221,10 @@ function TopBar({ user }: { user?: User | null }) {
     <header className="h-14 border-b border-sidebar-border bg-sidebar flex items-center justify-between px-4">
       <SidebarTrigger />
 
+      <div className="flex-1 px-4">
+        <ScopePicker compact />
+      </div>
+
       <div className="flex items-center gap-4">
         {/* Notifications */}
         <button
@@ -288,7 +274,7 @@ function TopBar({ user }: { user?: User | null }) {
           </PopoverTrigger>
           <PopoverContent align="end" className="w-48 p-1">
             <Link
-              to="/dashboard"
+              to="/dashboard/settings"
               className="flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-accent hover:text-accent-foreground transition-instant"
             >
               <svg

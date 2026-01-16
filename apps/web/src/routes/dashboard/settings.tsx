@@ -1,14 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useSearch, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 import type { ShameRepoPolicyMode } from "@bs-shame/api/types";
 
-import { useTRPC } from "@/utils/trpc";
-import { ScopePicker, dashboardSearchSchema } from "@/components/scope-picker";
+import { useDashboardScope } from "@/components/scope-picker";
 import { Button } from "@/components/ui/button";
+import { useTRPC } from "@/utils/trpc";
 
 export const Route = createFileRoute("/dashboard/settings")({
-  validateSearch: dashboardSearchSchema,
   component: DashboardSettingsPage,
 });
 
@@ -19,42 +18,25 @@ const MODE_LABELS: Record<ShameRepoPolicyMode, string> = {
 };
 
 function DashboardSettingsPage() {
-  const search = useSearch({ from: "/dashboard/settings" });
-  const navigate = useNavigate({ from: "/dashboard/settings" });
   const trpc = useTRPC();
-
-  const ownerId = search.ownerId ?? null;
-  const repoId = search.repoId ?? null;
-
-  const setOwnerId = (id: number | null) => {
-    navigate({ search: { ...search, ownerId: id ?? undefined } });
-  };
-  const setRepoId = (id: number | null) => {
-    navigate({ search: { ...search, repoId: id ?? undefined } });
-  };
+  const { installation, installationId, repoId } = useDashboardScope();
 
   const policyQuery = useQuery({
     ...trpc.shame.policy.getEffective.queryOptions({
-      githubOwnerId: ownerId ?? 0,
+      githubOwnerId: installation?.accountId ?? 0,
       githubRepoId: repoId ?? undefined,
     }),
-    enabled: ownerId !== null,
+    enabled: Boolean(installationId),
   });
 
   const { data, isLoading, error } = policyQuery;
 
-  if (!ownerId) {
+  if (!installationId) {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-display">Policy Settings</h1>
-        <ScopePicker
-          ownerId={ownerId}
-          repoId={repoId}
-          onOwnerChange={setOwnerId}
-          onRepoChange={setRepoId}
-        />
         <div className="text-center py-12 text-muted-foreground">
-          <p>Select an organization to view policy settings.</p>
+          <p>Select an installation to view policy settings.</p>
         </div>
       </div>
     );
@@ -63,13 +45,6 @@ function DashboardSettingsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-display">Policy Settings</h1>
-
-      <ScopePicker
-        ownerId={ownerId}
-        repoId={repoId}
-        onOwnerChange={setOwnerId}
-        onRepoChange={setRepoId}
-      />
 
       {isLoading && (
         <div className="animate-pulse space-y-4">
@@ -86,7 +61,6 @@ function DashboardSettingsPage() {
 
       {data && (
         <div className="space-y-8">
-          {/* Effective Policy */}
           <section className="bg-card border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-display">Effective Policy</h2>
@@ -106,7 +80,6 @@ function DashboardSettingsPage() {
             </div>
           </section>
 
-          {/* Org Policy */}
           {data.orgPolicy && (
             <section className="bg-card border border-border p-6">
               <h2 className="text-lg font-display mb-4">Organization Policy</h2>
@@ -121,7 +94,6 @@ function DashboardSettingsPage() {
             </section>
           )}
 
-          {/* Repo Policy (if viewing a repo) */}
           {repoId && (
             <section className="bg-card border border-border p-6">
               <h2 className="text-lg font-display mb-4">Repository Override</h2>
@@ -142,7 +114,6 @@ function DashboardSettingsPage() {
             </section>
           )}
 
-          {/* Edit Actions (placeholder - mutations not yet implemented) */}
           <section className="bg-muted/30 border border-dashed border-border p-6">
             <h2 className="text-lg font-display mb-2">Edit Policy</h2>
             <p className="text-sm text-muted-foreground mb-4">

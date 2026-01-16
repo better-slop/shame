@@ -54,7 +54,7 @@ beforeEach(async () => {
 
 describe("shame router integration", () => {
   test("creates reports and exposes evidence in actor view", async () => {
-    const report = await caller.report.create({
+    const report = await caller.report.createFromGithubUrl({
       scope: "repo",
       scopeGithubId: 1001,
       scopeLogin: "acme/road-runner",

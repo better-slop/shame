@@ -1,5 +1,6 @@
 import { createContext } from "@bs-shame/api/context";
 import { appRouter } from "@bs-shame/api/routers/index";
+import { EnforcementWorkflow, ReportWorkflow } from "@bs-shame/api/workflows";
 import { auth } from "@bs-shame/auth";
 import { env } from "@bs-shame/env/server";
 import { trpcServer } from "@hono/trpc-server";
@@ -7,6 +8,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { githubWebhookHandler } from "./webhooks/github";
+
+export { EnforcementWorkflow, ReportWorkflow };
 
 const app = new Hono();
 

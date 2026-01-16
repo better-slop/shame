@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useSearch, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { useDashboardScope } from "@/components/scope-picker";
 import { useTRPC } from "@/utils/trpc";
-import { ScopePicker, dashboardSearchSchema } from "@/components/scope-picker";
 import {
   StoneCard,
   StoneCardContent,
@@ -11,49 +11,31 @@ import {
 } from "@/components/ui/stone-card";
 
 export const Route = createFileRoute("/dashboard/wall")({
-  validateSearch: dashboardSearchSchema,
   component: DashboardWallPage,
 });
 
 function DashboardWallPage() {
-  const search = useSearch({ from: "/dashboard/wall" });
-  const navigate = useNavigate({ from: "/dashboard/wall" });
   const trpc = useTRPC();
-
-  const ownerId = search.ownerId ?? null;
-  const repoId = search.repoId ?? null;
-
-  const setOwnerId = (id: number | null) => {
-    navigate({ search: { ...search, ownerId: id ?? undefined } });
-  };
-  const setRepoId = (id: number | null) => {
-    navigate({ search: { ...search, repoId: id ?? undefined } });
-  };
+  const { installation, installationId, repoId } = useDashboardScope();
 
   const dashboardQuery = useQuery({
     ...trpc.shame.org.dashboard.queryOptions({
-      githubOwnerId: ownerId ?? 0,
+      githubOwnerId: installation?.accountId ?? 0,
       githubRepoId: repoId ?? undefined,
       page: 1,
       pageSize: 20,
     }),
-    enabled: ownerId !== null,
+    enabled: Boolean(installationId),
   });
 
   const { data, isLoading, error } = dashboardQuery;
 
-  if (!ownerId) {
+  if (!installationId) {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-display">Organization Wall</h1>
-        <ScopePicker
-          ownerId={ownerId}
-          repoId={repoId}
-          onOwnerChange={setOwnerId}
-          onRepoChange={setRepoId}
-        />
         <div className="text-center py-12 text-muted-foreground">
-          <p>Select an organization to view their wall.</p>
+          <p>Select an installation to view their wall.</p>
         </div>
       </div>
     );
@@ -62,13 +44,6 @@ function DashboardWallPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-display">Organization Wall</h1>
-
-      <ScopePicker
-        ownerId={ownerId}
-        repoId={repoId}
-        onOwnerChange={setOwnerId}
-        onRepoChange={setRepoId}
-      />
 
       {isLoading && (
         <div className="animate-pulse space-y-4">
@@ -86,7 +61,6 @@ function DashboardWallPage() {
 
       {data && (
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Recommendations */}
           <section className="lg:col-span-2">
             <h2 className="text-lg font-display mb-3">Recommendations</h2>
             {data.recommendations.length === 0 ? (
@@ -136,7 +110,6 @@ function DashboardWallPage() {
             )}
           </section>
 
-          {/* Recent Activity */}
           <section>
             <h2 className="text-lg font-display mb-3">Recent Activity</h2>
             {data.recentActivity.reports.length === 0 ? (
@@ -206,7 +179,6 @@ function DashboardWallPage() {
             )}
           </section>
 
-          {/* Current Enforcement */}
           <section>
             <h2 className="text-lg font-display mb-3">Current Enforcement</h2>
             {data.enforcements.rows.length === 0 ? (
@@ -247,7 +219,6 @@ function DashboardWallPage() {
         </div>
       )}
 
-      {/* Totals summary */}
       {data && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-border">
           <StatMini label="Enforcements" value={data.totals.enforcements} />

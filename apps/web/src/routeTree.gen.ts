@@ -20,6 +20,7 @@ import { Route as DashboardWallRouteImport } from './routes/dashboard/wall'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
 import { Route as DashboardReposRouteImport } from './routes/dashboard/repos'
 import { Route as DashboardReportsRouteImport } from './routes/dashboard/reports'
+import { Route as DashboardReportsNewRouteImport } from './routes/dashboard/reports/new'
 
 const WallRoute = WallRouteImport.update({
   id: '/wall',
@@ -76,6 +77,11 @@ const DashboardReportsRoute = DashboardReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardReportsNewRoute = DashboardReportsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => DashboardReportsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -83,24 +89,26 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/todos': typeof TodosRoute
   '/wall': typeof WallRouteWithChildren
-  '/dashboard/reports': typeof DashboardReportsRoute
+  '/dashboard/reports': typeof DashboardReportsRouteWithChildren
   '/dashboard/repos': typeof DashboardReposRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/wall': typeof DashboardWallRoute
   '/wall/$login': typeof WallLoginRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/reports/new': typeof DashboardReportsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/todos': typeof TodosRoute
   '/wall': typeof WallRouteWithChildren
-  '/dashboard/reports': typeof DashboardReportsRoute
+  '/dashboard/reports': typeof DashboardReportsRouteWithChildren
   '/dashboard/repos': typeof DashboardReposRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/wall': typeof DashboardWallRoute
   '/wall/$login': typeof WallLoginRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/reports/new': typeof DashboardReportsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -109,12 +117,13 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/todos': typeof TodosRoute
   '/wall': typeof WallRouteWithChildren
-  '/dashboard/reports': typeof DashboardReportsRoute
+  '/dashboard/reports': typeof DashboardReportsRouteWithChildren
   '/dashboard/repos': typeof DashboardReposRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/wall': typeof DashboardWallRoute
   '/wall/$login': typeof WallLoginRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/reports/new': typeof DashboardReportsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/dashboard/wall'
     | '/wall/$login'
     | '/dashboard/'
+    | '/dashboard/reports/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/dashboard/wall'
     | '/wall/$login'
     | '/dashboard'
+    | '/dashboard/reports/new'
   id:
     | '__root__'
     | '/'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/dashboard/wall'
     | '/wall/$login'
     | '/dashboard/'
+    | '/dashboard/reports/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -244,11 +256,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardReportsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/reports/new': {
+      id: '/dashboard/reports/new'
+      path: '/new'
+      fullPath: '/dashboard/reports/new'
+      preLoaderRoute: typeof DashboardReportsNewRouteImport
+      parentRoute: typeof DashboardReportsRoute
+    }
   }
 }
 
+interface DashboardReportsRouteChildren {
+  DashboardReportsNewRoute: typeof DashboardReportsNewRoute
+}
+
+const DashboardReportsRouteChildren: DashboardReportsRouteChildren = {
+  DashboardReportsNewRoute: DashboardReportsNewRoute,
+}
+
+const DashboardReportsRouteWithChildren =
+  DashboardReportsRoute._addFileChildren(DashboardReportsRouteChildren)
+
 interface DashboardRouteChildren {
-  DashboardReportsRoute: typeof DashboardReportsRoute
+  DashboardReportsRoute: typeof DashboardReportsRouteWithChildren
   DashboardReposRoute: typeof DashboardReposRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardWallRoute: typeof DashboardWallRoute
@@ -256,7 +286,7 @@ interface DashboardRouteChildren {
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
-  DashboardReportsRoute: DashboardReportsRoute,
+  DashboardReportsRoute: DashboardReportsRouteWithChildren,
   DashboardReposRoute: DashboardReposRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardWallRoute: DashboardWallRoute,

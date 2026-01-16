@@ -1,5 +1,5 @@
 import alchemy from "alchemy";
-import { D1Database, TanStackStart, Worker } from "alchemy/cloudflare";
+import { D1Database, KVNamespace, TanStackStart, Worker, Workflow } from "alchemy/cloudflare";
 import { GitHubSecret, RepositoryEnvironment } from "alchemy/github";
 import { CloudflareStateStore } from "alchemy/state";
 import { config } from "dotenv";
@@ -74,6 +74,20 @@ const db = await D1Database("database", {
   adopt: true,
 });
 
+const githubCache = await KVNamespace("github-cache", {
+  title: `github-cache-${stage ?? "local"}`,
+});
+
+const reportWorkflow = Workflow("report-workflow", {
+  className: "ReportWorkflow",
+  workflowName: "report-workflow",
+});
+
+const enforcementWorkflow = Workflow("enforcement-workflow", {
+  className: "EnforcementWorkflow",
+  workflowName: "enforcement-workflow",
+});
+
 export const web = await TanStackStart("web", {
   cwd: "../../apps/web",
   adopt: true,
@@ -100,6 +114,9 @@ export const server = await Worker("server", {
     BETTER_AUTH_URL: betterAuthUrl,
     GITHUB_CLIENT_ID: githubClientId,
     GITHUB_CLIENT_SECRET: githubClientSecret,
+    GITHUB_CACHE: githubCache,
+    REPORT_WORKFLOW: reportWorkflow,
+    ENFORCEMENT_WORKFLOW: enforcementWorkflow,
     ...(githubWebhookSecret && { GITHUB_WEBHOOK_SECRET: githubWebhookSecret }),
     ...(githubAppId && { GITHUB_APP_ID: githubAppId }),
     ...(githubAppPrivateKey && { GITHUB_APP_PRIVATE_KEY: githubAppPrivateKey }),

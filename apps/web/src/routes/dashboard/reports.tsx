@@ -1,13 +1,31 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { useDashboardScope } from "@/components/scope-picker";
+import { Button } from "@/components/ui/button";
+
 export const Route = createFileRoute("/dashboard/reports")({
   component: DashboardReportsPage,
 });
 
 function DashboardReportsPage() {
+  const { installationId, installation } = useDashboardScope();
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-display">Reports</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-display">Reports</h1>
+          <p className="text-sm text-muted-foreground">
+            {installation
+              ? `Reports for ${installation.accountLogin}`
+              : "Select an installation to file a report."}
+          </p>
+        </div>
+        <a href="/dashboard/reports/new">
+          <Button size="sm" disabled={!installationId}>New Report</Button>
+        </a>
+      </div>
+
       <div className="text-center py-16 bg-muted/30 border border-dashed border-border">
         <div className="pillory-icon mx-auto mb-4">
           <svg
@@ -24,9 +42,10 @@ function DashboardReportsPage() {
             />
           </svg>
         </div>
-        <h2 className="text-lg font-display mb-2">Coming Soon</h2>
+        <h2 className="text-lg font-display mb-2">No reports yet</h2>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          View and manage reports filed against bad actors. This feature is under development.
+          Reports are collected per repo or organization. File a report from a GitHub issue or PR
+          to start building your enforcement history.
         </p>
       </div>
     </div>

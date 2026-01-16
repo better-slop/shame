@@ -1,15 +1,11 @@
 import { TRPCError } from "@trpc/server";
-import { and, count, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@bs-shame/db";
-import type {
-  ShameEvidenceKind,
-  ShameOrgPolicyMode,
-  ShameRepoPolicyMode,
-  ShameReasonCode,
-  ShameScope,
-} from "@bs-shame/db/schema/shame";
+import { account } from "@bs-shame/db/schema/auth";
+import { githubInstallation, githubInstallationRepo } from "@bs-shame/db/schema/github";
+import type { GithubActorType, ShameEvidenceKind, ShameReasonCode } from "@bs-shame/db/schema/shame";
 import {
   shameActor,
   shameActorLogin,
@@ -19,33 +15,21 @@ import {
   shamePolicyRepo,
   shameReport,
 } from "@bs-shame/db/schema/shame";
+import { env } from "@bs-shame/env/server";
 
-import { publicProcedure, router } from "../index";
+import { createInstallationToken } from "../github/app";
+import { getCachedJson, setCachedJson } from "../github/cache";
+import { createGithubClient } from "../github/client";
+import { parseGithubUrl } from "../github/parse-github-url";
+import { protectedProcedure, publicProcedure, router } from "../index";
 import { computeActorScore, type ReportWithMeta } from "../scoring/shame-score";
+import {
+  type EffectivePolicy,
+  getActorOccurrenceCounts,
+  getEffectivePolicy,
+  meetsThresholds,
+} from "../shame/policy";
 
-type PolicyConfig = {
-  mode: ShameOrgPolicyMode;
-  flagAt: number;
-  banAt: number;
-};
-
-type RepoPolicyConfig = {
-  mode: ShameRepoPolicyMode;
-  flagAt: number;
-  banAt: number;
-};
-
-type EffectivePolicy = {
-  source: ShameScope;
-  orgPolicy: PolicyConfig | null;
-  repoPolicy: RepoPolicyConfig | null;
-} & PolicyConfig;
-
-const DEFAULT_POLICY: PolicyConfig = {
-  mode: "manual",
-  flagAt: 2,
-  banAt: 3,
-};
 
 /**
  * Projects only safe (non-audit) fields from a report row.
@@ -81,122 +65,6 @@ function projectEnforcementSafe(enforcement: typeof shameEnforcement.$inferSelec
     active: enforcement.active,
     createdAt: enforcement.createdAt,
     revokedAt: enforcement.revokedAt,
-  };
-}
-
-/**
- * Projects only safe fields from a policy row.
- */
-function projectPolicySafe(policy: typeof shamePolicyOrg.$inferSelect | null): PolicyConfig | null {
-  if (!policy) return null;
-  return {
-    mode: policy.mode,
-    flagAt: policy.flagAt,
-    banAt: policy.banAt,
-  };
-}
-
-/**
- * Resolves effective policy for a scope (org or repo).
- * If repo policy is missing or mode='inherit', falls back to org policy.
- * If org policy is missing, uses system defaults.
- */
-async function getEffectivePolicyInternal(
-  githubOwnerId: number,
-  githubRepoId?: number,
-): Promise<EffectivePolicy> {
-  const [orgPolicy, repoPolicy] = await Promise.all([
-    db.query.shamePolicyOrg.findFirst({
-      where: eq(shamePolicyOrg.githubOwnerId, githubOwnerId),
-    }),
-    githubRepoId
-      ? db.query.shamePolicyRepo.findFirst({
-          where: eq(shamePolicyRepo.githubRepoId, githubRepoId),
-        })
-      : Promise.resolve(null),
-  ]);
-
-  const effectiveOrg = orgPolicy ?? { ...DEFAULT_POLICY, githubOwnerId };
-
-  if (repoPolicy && repoPolicy.mode !== "inherit") {
-    return {
-      source: "repo",
-      mode: repoPolicy.mode,
-      flagAt: repoPolicy.flagAt,
-      banAt: repoPolicy.banAt,
-      orgPolicy: projectPolicySafe(orgPolicy ?? null),
-      repoPolicy: {
-        mode: repoPolicy.mode,
-        flagAt: repoPolicy.flagAt,
-        banAt: repoPolicy.banAt,
-      },
-    };
-  }
-
-  return {
-    source: "org",
-    mode: effectiveOrg.mode,
-    flagAt: effectiveOrg.flagAt,
-    banAt: effectiveOrg.banAt,
-    orgPolicy: projectPolicySafe(orgPolicy ?? null),
-    repoPolicy: repoPolicy
-      ? {
-          mode: repoPolicy.mode,
-          flagAt: repoPolicy.flagAt,
-          banAt: repoPolicy.banAt,
-        }
-      : null,
-  };
-}
-
-/**
- * Computes occurrence counts for an actor across all scopes.
- * Uses COUNT(DISTINCT (scope, scope_github_id)) to avoid collision between org/repo IDs.
- */
-async function getActorOccurrenceCounts(actorGithubUserId: number) {
-  const result = await db
-    .select({
-      repoBanOccurrences: sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.scope} = 'repo' AND ${shameReport.action} = 'ban' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`,
-      orgBanOccurrences: sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.scope} = 'org' AND ${shameReport.action} = 'ban' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`,
-      repoFlagOccurrences: sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.scope} = 'repo' AND ${shameReport.action} = 'flag' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`,
-      orgFlagOccurrences: sql<number>`COUNT(DISTINCT CASE WHEN ${shameReport.scope} = 'org' AND ${shameReport.action} = 'flag' THEN ${shameReport.scope} || ':' || ${shameReport.scopeGithubId} END)`,
-    })
-    .from(shameReport)
-    .where(
-      and(
-        eq(shameReport.actorGithubUserId, actorGithubUserId),
-        eq(shameReport.visibility, "public"),
-      ),
-    );
-
-  const r = result[0] ?? {
-    repoBanOccurrences: 0,
-    orgBanOccurrences: 0,
-    repoFlagOccurrences: 0,
-    orgFlagOccurrences: 0,
-  };
-
-  return {
-    repoBanOccurrences: Number(r.repoBanOccurrences),
-    orgBanOccurrences: Number(r.orgBanOccurrences),
-    repoFlagOccurrences: Number(r.repoFlagOccurrences),
-    orgFlagOccurrences: Number(r.orgFlagOccurrences),
-    totalBanOccurrences: Number(r.repoBanOccurrences) + Number(r.orgBanOccurrences),
-    totalFlagOccurrences: Number(r.repoFlagOccurrences) + Number(r.orgFlagOccurrences),
-  };
-}
-
-/**
- * Checks if an actor meets a given policy's thresholds.
- */
-function meetsThresholds(
-  counts: { totalBanOccurrences: number; totalFlagOccurrences: number },
-  policy: { flagAt: number; banAt: number },
-): { shouldFlag: boolean; shouldBan: boolean } {
-  const totalOccurrences = counts.totalBanOccurrences + counts.totalFlagOccurrences;
-  return {
-    shouldFlag: totalOccurrences >= policy.flagAt,
-    shouldBan: counts.totalBanOccurrences >= policy.banAt,
   };
 }
 
@@ -249,7 +117,7 @@ const policyRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      return getEffectivePolicyInternal(input.githubOwnerId, input.githubRepoId);
+      return getEffectivePolicy(input.githubOwnerId, input.githubRepoId);
     }),
 
   setOrg: publicProcedure
@@ -420,7 +288,7 @@ const actorRouter = router({
         | undefined;
 
       if (input.viewerContext) {
-        const policy = await getEffectivePolicyInternal(
+        const policy = await getEffectivePolicy(
           input.viewerContext.ownerId,
           input.viewerContext.repoId,
         );
@@ -469,7 +337,84 @@ const actorRouter = router({
     }),
 });
 
+const installationRouter = router({
+  list: protectedProcedure.query(async ({ ctx }) => {
+    const githubAccount = await db.query.account.findFirst({
+      where: and(eq(account.userId, ctx.session.user.id), eq(account.providerId, "github")),
+    });
+
+    if (!githubAccount) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "GitHub account not linked",
+      });
+    }
+
+    const installations = await db
+      .select({
+        installationId: githubInstallation.installationId,
+        accountId: githubInstallation.accountId,
+        accountLogin: githubInstallation.accountLogin,
+        accountType: githubInstallation.accountType,
+      })
+      .from(githubInstallation)
+      .where(isNull(githubInstallation.suspendedAt))
+      .orderBy(sql`lower(${githubInstallation.accountLogin})`);
+
+    return installations;
+
+  }),
+  repos: protectedProcedure
+    .input(z.object({ installationId: z.number() }))
+    .query(async ({ input }) => {
+      const installation = await db.query.githubInstallation.findFirst({
+        where: and(
+          eq(githubInstallation.installationId, input.installationId),
+          isNull(githubInstallation.suspendedAt),
+        ),
+      });
+
+      if (!installation) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Installation not found",
+        });
+      }
+
+      return db
+        .select({
+          githubRepoId: githubInstallationRepo.githubRepoId,
+          fullName: githubInstallationRepo.fullName,
+        })
+        .from(githubInstallationRepo)
+        .where(eq(githubInstallationRepo.installationId, input.installationId))
+        .orderBy(sql`lower(${githubInstallationRepo.fullName})`);
+    }),
+});
+
 const reportRouter = router({
+  list: publicProcedure
+    .input(
+      z.object({
+        scope: z.enum(["org", "repo"]),
+        scopeGithubId: z.number(),
+        limit: z.number().min(1).max(100).default(25),
+        offset: z.number().min(0).default(0),
+      }),
+    )
+    .query(async ({ input }) => {
+      const reports = await db.query.shameReport.findMany({
+        where: and(
+          eq(shameReport.scope, input.scope),
+          eq(shameReport.scopeGithubId, input.scopeGithubId),
+        ),
+        orderBy: desc(shameReport.createdAt),
+        limit: input.limit,
+        offset: input.offset,
+      });
+
+      return reports.map((report) => projectReportSafe(report));
+    }),
   create: publicProcedure
     .input(
       z.object({
@@ -593,6 +538,310 @@ const reportRouter = router({
           })),
         );
       }
+
+      return report;
+    }),
+  createFromGithubUrl: protectedProcedure
+    .input(
+      z.object({
+        githubUrl: z.string().url(),
+        action: z.enum(["flag", "ban"]),
+        reasonCode: z.enum([
+          "ai_spam",
+          "spam",
+          "harassment",
+          "hate",
+          "phishing",
+          "malware",
+          "other",
+        ]),
+        reasonText: z.string().optional(),
+        installationId: z.number(),
+        githubRepoId: z.number().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const parsed = parseGithubUrl(input.githubUrl);
+      if (!parsed) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid GitHub URL",
+        });
+      }
+
+      const repoFullName = `${parsed.owner}/${parsed.repo}`.toLowerCase();
+      const installation = await db.query.githubInstallation.findFirst({
+        where: eq(githubInstallation.installationId, input.installationId),
+      });
+
+      if (!installation || installation.suspendedAt) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "GitHub installation is not active",
+        });
+      }
+
+      const installationRepo = await db.query.githubInstallationRepo.findFirst({
+        where: and(
+          eq(githubInstallationRepo.installationId, input.installationId),
+          eq(githubInstallationRepo.fullName, repoFullName),
+        ),
+      });
+
+      if (!installationRepo) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Repository is not part of this installation",
+        });
+      }
+
+      if (input.githubRepoId && installationRepo.githubRepoId !== input.githubRepoId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Repo mismatch for selected scope",
+        });
+      }
+
+      if (!env.GITHUB_APP_ID || !env.GITHUB_APP_PRIVATE_KEY) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "GitHub App credentials not configured",
+        });
+      }
+
+      const user = ctx.session.user;
+      const githubAccount = await db.query.account.findFirst({
+        where: and(eq(account.userId, user.id), eq(account.providerId, "github")),
+      });
+
+      if (!githubAccount?.accessToken) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "GitHub access token missing",
+        });
+      }
+
+      const userClient = createGithubClient({ token: githubAccount.accessToken, type: "token" });
+      const viewer = await userClient.request({
+        method: "GET",
+        path: "/user",
+        schema: z.object({
+          login: z.string(),
+        }),
+      });
+
+      const installationToken = await createInstallationToken({
+        installationId: input.installationId,
+        credentials: {
+          appId: env.GITHUB_APP_ID,
+          privateKey: env.GITHUB_APP_PRIVATE_KEY,
+        },
+      });
+      const appClient = createGithubClient({ token: installationToken.token, type: "bearer" });
+
+      const repoCacheKey = `repo:${repoFullName}`;
+      const issueCacheKey = `${parsed.kind}:${repoFullName}#${parsed.number}`;
+      const permissionCacheKey = `perm:${repoFullName}:${viewer.login}`;
+
+      const repoDetails =
+        (await getCachedJson(
+          repoCacheKey,
+          z.object({
+            id: z.number(),
+            full_name: z.string(),
+            owner: z.object({
+              id: z.number(),
+              login: z.string(),
+              type: z.string(),
+            }),
+          }),
+        )) ??
+        (await appClient.request({
+          method: "GET",
+          path: `/repos/${parsed.owner}/${parsed.repo}`,
+          schema: z.object({
+            id: z.number(),
+            full_name: z.string(),
+            owner: z.object({
+              id: z.number(),
+              login: z.string(),
+              type: z.string(),
+            }),
+          }),
+        }));
+
+      if (!repoDetails) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Repository not found",
+        });
+      }
+
+      await setCachedJson(repoCacheKey, repoDetails, { ttlSeconds: 3600 });
+
+      const issueData =
+        (await getCachedJson(
+          issueCacheKey,
+          z.object({
+            id: z.number(),
+            number: z.number(),
+            user: z.object({
+              id: z.number(),
+              login: z.string(),
+              type: z.string().optional(),
+            }),
+            pull_request: z
+              .object({
+                url: z.string().optional(),
+              })
+              .optional(),
+            html_url: z.string(),
+          }),
+        )) ??
+        (await appClient.request({
+          method: "GET",
+          path: `/repos/${parsed.owner}/${parsed.repo}/issues/${parsed.number}`,
+          schema: z.object({
+            id: z.number(),
+            number: z.number(),
+            user: z.object({
+              id: z.number(),
+              login: z.string(),
+              type: z.string().optional(),
+            }),
+            pull_request: z
+              .object({
+                url: z.string().optional(),
+              })
+              .optional(),
+            html_url: z.string(),
+          }),
+        }));
+
+      if (!issueData) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Issue or pull request not found",
+        });
+      }
+
+      await setCachedJson(issueCacheKey, issueData, { ttlSeconds: 600 });
+
+      if (parsed.kind === "pull" && !issueData.pull_request) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "URL is not a pull request",
+        });
+      }
+
+      if (parsed.kind === "issue" && issueData.pull_request) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "URL is not an issue",
+        });
+      }
+
+      const permissionResult =
+        (await getCachedJson(permissionCacheKey, z.object({ permission: z.string() }))) ??
+        (await userClient.request({
+          method: "GET",
+          path: `/repos/${parsed.owner}/${parsed.repo}/collaborators/${viewer.login}/permission`,
+          schema: z.object({
+            permission: z.string(),
+          }),
+        }));
+
+      await setCachedJson(permissionCacheKey, permissionResult, { ttlSeconds: 120 });
+
+      const isMaintainer = ["admin", "maintain"].includes(permissionResult.permission);
+      if (!isMaintainer) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Maintainer permissions required",
+        });
+      }
+
+      if (repoDetails.id !== installationRepo.githubRepoId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Repository access denied",
+        });
+      }
+
+      const actorType = issueData.user.type?.toLowerCase();
+      const normalizedActorType: GithubActorType =
+        actorType === "organization" || actorType === "user" || actorType === "bot"
+          ? actorType
+          : "unknown";
+
+      await db
+        .insert(shameActor)
+        .values({
+          githubUserId: issueData.user.id,
+          login: issueData.user.login,
+          profileUrl: `https://github.com/${issueData.user.login}`,
+          type: normalizedActorType,
+        })
+        .onConflictDoUpdate({
+          target: shameActor.githubUserId,
+          set: {
+            login: issueData.user.login,
+            type: normalizedActorType,
+            updatedAt: new Date(),
+          },
+        });
+
+      await db
+        .insert(shameActorLogin)
+        .values({
+          actorGithubUserId: issueData.user.id,
+          login: issueData.user.login,
+        })
+        .onConflictDoUpdate({
+          target: [shameActorLogin.actorGithubUserId, shameActorLogin.login],
+          set: { lastSeenAt: new Date() },
+        });
+
+      const scope = input.githubRepoId ? "repo" : "org";
+      const scopeGithubId = input.githubRepoId ?? installation.accountId;
+      const scopeLogin = input.githubRepoId ? repoDetails.full_name : installation.accountLogin;
+      const reportId = `${scope}:${scopeGithubId}:${issueData.user.id}`;
+
+      const [report] = await db
+        .insert(shameReport)
+        .values({
+          id: reportId,
+          scope,
+          scopeGithubId,
+          scopeLogin,
+          actorGithubUserId: issueData.user.id,
+          actorLogin: issueData.user.login,
+          action: input.action,
+          reasonCode: input.reasonCode,
+          reasonText: input.reasonText,
+          visibility: "public",
+          createdByUserId: user.id,
+        })
+        .onConflictDoUpdate({
+          target: [shameReport.scope, shameReport.scopeGithubId, shameReport.actorGithubUserId],
+          set: {
+            action: input.action,
+            reasonCode: input.reasonCode,
+            reasonText: input.reasonText,
+            actorLogin: issueData.user.login,
+            scopeLogin,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      await db.insert(shameEvidence).values({
+        reportId,
+        kind: parsed.kind === "pull" ? "pr" : "issue",
+        url: issueData.html_url,
+        githubRepoId: repoDetails.id,
+        githubNumber: issueData.number,
+      });
 
       return report;
     }),
@@ -922,7 +1171,7 @@ const orgRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const policy = await getEffectivePolicyInternal(input.githubOwnerId, input.githubRepoId);
+      const policy = await getEffectivePolicy(input.githubOwnerId, input.githubRepoId);
 
       const scopeGithubId = input.githubRepoId ?? input.githubOwnerId;
       const scope = input.githubRepoId ? "repo" : "org";
@@ -1094,6 +1343,7 @@ const orgRouter = router({
 });
 
 export const shameRouter = router({
+  installations: installationRouter,
   policy: policyRouter,
   actor: actorRouter,
   org: orgRouter,

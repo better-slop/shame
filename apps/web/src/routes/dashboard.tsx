@@ -1,9 +1,11 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { dashboardSearchSchema } from "@/components/scope-picker";
 import { getUser } from "@/functions/get-user";
 
 export const Route = createFileRoute("/dashboard")({
+  validateSearch: dashboardSearchSchema,
   beforeLoad: async () => {
     const session = await getUser();
     return { session };
