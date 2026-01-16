@@ -2,7 +2,7 @@ import type { Context } from "hono";
 import { db } from "@bs-shame/db";
 import { githubInstallation, githubInstallationRepo } from "@bs-shame/db/schema/github";
 import { env } from "@bs-shame/env/server";
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 type GitHubWebhookEvent =
   | {
