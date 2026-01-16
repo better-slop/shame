@@ -9,6 +9,8 @@ Alchemy is a TypeScript-first infrastructure-as-code tool for deploying to Cloud
 
 ## Quick Start
 
+**When working with Cloudflare Workflows, always read and reference the Alchemy Workflows guide:** `references/cloudflare-workflows.md`.
+
 ```ts
 import alchemy from "alchemy";
 import { Worker, KVNamespace, D1Database } from "alchemy/cloudflare";
