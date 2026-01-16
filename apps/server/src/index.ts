@@ -21,7 +21,24 @@ app.use(
   }),
 );
 
-app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+app.on(["POST", "GET"], "/api/auth/*", (c) => {
+  const url = new URL(c.req.url);
+  if (url.pathname.startsWith("/api/auth/callback/")) {
+    const state = c.req.query("state");
+    const cookieHeader = c.req.header("cookie") ?? "";
+    const origin = c.req.header("origin");
+    const referer = c.req.header("referer");
+    console.info("Auth callback request", {
+      path: url.pathname,
+      state,
+      cookieHeader,
+      origin,
+      referer,
+    });
+  }
+
+  return auth.handler(c.req.raw);
+});
 
 app.post("/github/webhook", githubWebhookHandler);
 
