@@ -21,6 +21,9 @@ export const auth = betterAuth({
       clientSecret: env.GITHUB_CLIENT_SECRET,
     },
   },
+  account: {
+    storeStateStrategy: "cookie",
+  },
   // uncomment cookieCache setting when ready to deploy to Cloudflare using *.workers.dev domains
   // session: {
   //   cookieCache: {
