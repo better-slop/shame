@@ -33,7 +33,7 @@ const REASON_CODE_LABELS: Record<ReasonCode, string> = {
 
 function DashboardReportCreatePage() {
   const trpc = useTRPC();
-  const navigate = useNavigate({ from: "/dashboard/reports/new" });
+  const navigate = useNavigate();
   const { installation, repoId } = useDashboardScope();
   const [formData, setFormData] = useState<ReportFormState>({
     githubUrl: "",
@@ -42,13 +42,13 @@ function DashboardReportCreatePage() {
     reasonText: "",
   });
 
-  const mutation = useMutation(
-    trpc.shame.report.createFromGithubUrl.mutationOptions({
+  const mutation = useMutation({
+    ...trpc.shame.report.createFromGithubUrl.mutationOptions({
       onSuccess: () => {
         navigate({ to: "/dashboard/reports" });
       },
     }),
-  );
+  });
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();

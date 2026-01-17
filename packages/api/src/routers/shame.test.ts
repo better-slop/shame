@@ -24,7 +24,39 @@ mock.module("@bs-shame/db", () => ({ db }));
 
 const { shameRouter } = await import("./shame");
 
-const caller = shameRouter.createCaller({ session: null });
+const workflowStub = {
+  create: async () => ({
+    id: "workflow",
+    status: async () => ({ status: "complete", output: {} }),
+    pause: async () => {},
+    resume: async () => {},
+    terminate: async () => {},
+    restart: async () => {},
+    sendEvent: async () => {},
+  }),
+  get: async () => ({
+    id: "workflow",
+    status: async () => ({ status: "complete", output: {} }),
+    pause: async () => {},
+    resume: async () => {},
+    terminate: async () => {},
+    restart: async () => {},
+    sendEvent: async () => {},
+  }),
+  createBatch: async () => [],
+} as unknown as Workflow<{ githubUrl: string; installationId: number }>;
+
+const caller = shameRouter.createCaller({
+  session: null,
+  env: {
+    REPORT_WORKFLOW: workflowStub,
+    ENFORCEMENT_WORKFLOW: workflowStub as unknown as Workflow<{
+      repoFullName: string;
+      actorLogin: string;
+      token: string;
+    }>,
+  },
+});
 const migrationsFolder = join(
   dirname(fileURLToPath(import.meta.url)),
   "../../../db/src/migrations",
@@ -54,7 +86,7 @@ beforeEach(async () => {
 
 describe("shame router integration", () => {
   test("creates reports and exposes evidence in actor view", async () => {
-    const report = await caller.report.createFromGithubUrl({
+    const report = await caller.report.create({
       scope: "repo",
       scopeGithubId: 1001,
       scopeLogin: "acme/road-runner",

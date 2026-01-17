@@ -11,6 +11,7 @@ describe("computeReportWeight", () => {
     repoStars: 100,
     repoContributors: 10,
     reporterIsMaintainer: false,
+    actorCommitCount: 0,
   };
 
   test("ban > flag", () => {
@@ -72,6 +73,26 @@ describe("computeReportWeight", () => {
     expect(maintainerWeight / regularWeight).toBeCloseTo(1.5, 1);
   });
 
+  test("high commit count down-weights small repos", () => {
+    const smallRepoHighCommits = {
+      ...baseReport,
+      repoStars: 5,
+      repoContributors: 2,
+      actorCommitCount: 5000,
+    };
+    const largerRepoHighCommits = {
+      ...baseReport,
+      repoStars: 5000,
+      repoContributors: 200,
+      actorCommitCount: 5000,
+    };
+
+    const lowWeight = computeReportWeight(smallRepoHighCommits);
+    const highWeight = computeReportWeight(largerRepoHighCommits);
+
+    expect(highWeight).toBeGreaterThan(lowWeight);
+  });
+
   test("zero stars/contributors are bounded at 0.2", () => {
     const noDataReport = {
       ...baseReport,
@@ -106,6 +127,7 @@ describe("computeActorScore", () => {
     repoStars: 100,
     repoContributors: 10,
     reporterIsMaintainer: false,
+    actorCommitCount: 0,
     ...overrides,
   });
 

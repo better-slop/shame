@@ -33,8 +33,8 @@ Apps:
 Packages:
 
 - @bs-shame/api - tRPC API layer with Drizzle
-- @bs-shame/auth - Better-Auth wrapper
-- @bs-shame/db - Drizzle ORM with libsql/Turso
+- @bs-shame/auth - Better-Auth wrapper - do not handwrite migrations
+- @bs-shame/db - Drizzle ORM with libsql/Turso - do not handwrite migrations
 - @bs-shame/env - Environment config (Zod validated)
 - @bs-shame/config - Shared TypeScript/tooling config
 - @bs-shame/infra - Alchemy deployment orchestration

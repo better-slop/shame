@@ -7,6 +7,7 @@ export type ReportWithMeta = {
   repoStars?: number;
   repoContributors?: number;
   reporterIsMaintainer: boolean;
+  actorCommitCount?: number;
 };
 
 function groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]> {
@@ -47,7 +48,12 @@ export function computeReportWeight(r: ReportWithMeta): number {
   // Maintainer reports worth more
   const maintainerMultiplier = r.reporterIsMaintainer ? 1.5 : 1.0;
 
-  return actionWeight * starsFactor * contributorsFactor * ageFactor * maintainerMultiplier;
+  const commitCount = r.actorCommitCount ?? 0;
+  const commitLog = Math.log10(commitCount + 1);
+  const repoScale = Math.max(starsFactor, contributorsFactor);
+  const mismatchFactor = clamp(repoScale / (commitLog / 3 + 1), 0.35, 1.1);
+
+  return actionWeight * starsFactor * contributorsFactor * ageFactor * maintainerMultiplier * mismatchFactor;
 }
 
 export function computeActorScore(reports: ReportWithMeta[]): number {

@@ -273,68 +273,19 @@
           "isUnique": true
         }
       },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "verification": {
-      "name": "verification",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "identifier": {
-          "name": "identifier",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "value": {
-          "name": "value",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+      "foreignKeys": {
+        "github_installation_installed_by_user_id_user_id_fk": {
+          "name": "github_installation_installed_by_user_id_user_id_fk",
+          "tableFrom": "github_installation",
+          "tableTo": "user",
+          "columnsFrom": ["installed_by_user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
-      "indexes": {
-        "verification_identifier_idx": {
-          "name": "verification_identifier_idx",
-          "columns": ["identifier"],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
       "compositePrimaryKeys": {},
+
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -383,6 +334,27 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "installed_by_user_id": {
+          "name": "installed_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "installed_by_account_id": {
+          "name": "installed_by_account_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "installed_by_login": {
+          "name": "installed_by_login",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -394,6 +366,21 @@
         "github_installation_login_idx": {
           "name": "github_installation_login_idx",
           "columns": ["account_login"],
+          "isUnique": false
+        },
+        "github_installation_installed_by_user_idx": {
+          "name": "github_installation_installed_by_user_idx",
+          "columns": ["installed_by_user_id"],
+          "isUnique": false
+        },
+        "github_installation_installed_by_account_idx": {
+          "name": "github_installation_installed_by_account_idx",
+          "columns": ["installed_by_account_id"],
+          "isUnique": false
+        },
+        "github_installation_installed_by_login_idx": {
+          "name": "github_installation_installed_by_login_idx",
+          "columns": ["installed_by_login"],
           "isUnique": false
         }
       },
@@ -1131,6 +1118,35 @@
         "reason_text": {
           "name": "reason_text",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "repo_stars": {
+          "name": "repo_stars",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "repo_contributors": {
+          "name": "repo_contributors",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "reporter_is_maintainer": {
+          "name": "reporter_is_maintainer",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "actor_commit_count": {
+          "name": "actor_commit_count",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

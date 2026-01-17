@@ -1,0 +1,10 @@
+ALTER TABLE `shame_report` ADD `repo_stars` integer;
+ALTER TABLE `shame_report` ADD `repo_contributors` integer;
+ALTER TABLE `shame_report` ADD `reporter_is_maintainer` integer DEFAULT false;
+ALTER TABLE `shame_report` ADD `actor_commit_count` integer;
+ALTER TABLE `github_installation` ADD `installed_by_user_id` text REFERENCES `user`(`id`);
+ALTER TABLE `github_installation` ADD `installed_by_account_id` integer;
+ALTER TABLE `github_installation` ADD `installed_by_login` text;
+CREATE INDEX `github_installation_installed_by_user_idx` ON `github_installation` (`installed_by_user_id`);
+CREATE INDEX `github_installation_installed_by_account_idx` ON `github_installation` (`installed_by_account_id`);
+CREATE INDEX `github_installation_installed_by_login_idx` ON `github_installation` (`installed_by_login`);

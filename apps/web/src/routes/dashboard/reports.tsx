@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { useDashboardScope } from "@/components/scope-picker";
 import { Button } from "@/components/ui/button";
@@ -21,9 +21,9 @@ function DashboardReportsPage() {
               : "Select an installation to file a report."}
           </p>
         </div>
-        <a href="/dashboard/reports/new">
+        <Link to="/dashboard/reports/new">
           <Button size="sm" disabled={!installationId}>New Report</Button>
-        </a>
+        </Link>
       </div>
 
       <div className="text-center py-16 bg-muted/30 border border-dashed border-border">

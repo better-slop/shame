@@ -15,6 +15,11 @@ type GitHubWebhookEvent =
           type: "User" | "Organization";
         };
       };
+      sender?: {
+        id: number;
+        login: string;
+        type: "User" | "Organization";
+      };
       repositories?: Array<{
         id: number;
         full_name: string;
@@ -93,7 +98,7 @@ async function verifySignature(request: Request, body: string): Promise<boolean>
 async function handleInstallationCreated(
   event: Extract<GitHubWebhookEvent, { action: "created" }>,
 ) {
-  const { installation, repositories } = event;
+  const { installation, repositories, sender } = event;
 
   await db
     .insert(githubInstallation)
@@ -102,6 +107,8 @@ async function handleInstallationCreated(
       accountId: installation.account.id,
       accountLogin: installation.account.login,
       accountType: installation.account.type,
+      installedByAccountId: sender?.id,
+      installedByLogin: sender?.login,
     })
     .onConflictDoUpdate({
       target: githubInstallation.installationId,
@@ -110,6 +117,8 @@ async function handleInstallationCreated(
         accountLogin: installation.account.login,
         accountType: installation.account.type,
         suspendedAt: null,
+        installedByAccountId: sender?.id,
+        installedByLogin: sender?.login,
       },
     });
 
