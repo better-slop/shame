@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@bs-shame/db";
 import { account } from "@bs-shame/db/schema/auth";
 import { githubInstallation, githubInstallationRepo } from "@bs-shame/db/schema/github";
-import type { GithubActorType, ShameEvidenceKind, ShameReasonCode } from "@bs-shame/db/schema/shame";
+import type { ShameEvidenceKind, ShameReasonCode } from "@bs-shame/db/schema/shame";
 import {
   shameActor,
   shameActorLogin,
@@ -17,8 +17,6 @@ import {
 } from "@bs-shame/db/schema/shame";
 import { env } from "@bs-shame/env/server";
 
-import { getCachedJson, setCachedJson } from "../github/cache";
-import { createGithubClient } from "../github/client";
 import { parseGithubUrl } from "../github/parse-github-url";
 import { protectedProcedure, publicProcedure, router } from "../index";
 import { computeActorScore, type ReportWithMeta } from "../scoring/shame-score";
@@ -567,7 +565,7 @@ const reportRouter = router({
         githubRepoId: z.number().optional(),
       }),
     )
-     .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }) => {
       const parsed = parseGithubUrl(input.githubUrl);
       if (!parsed) {
         throw new TRPCError({
@@ -628,15 +626,6 @@ const reportRouter = router({
         });
       }
 
-      const userClient = createGithubClient({ token: githubAccount.accessToken, type: "token" });
-      const viewer = await userClient.request({
-        method: "GET",
-        path: "/user",
-        schema: z.object({
-          login: z.string(),
-        }),
-      });
-
       const reportWorkflow = ctx.env.REPORT_WORKFLOW;
       const reportInstance = await reportWorkflow.create({
         params: {
@@ -644,68 +633,105 @@ const reportRouter = router({
           installationId: input.installationId,
         },
       });
-      const reportStatus = await reportInstance.status();
-      if (reportStatus.status !== "complete") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Report workflow did not complete",
-        });
+
+      await db.insert(shameEvidence).values({
+        reportId: `job:${reportInstance.id}`,
+        kind: parsed.kind === "pull" ? "pr" : "issue",
+        url: input.githubUrl,
+        githubRepoId: installationRepo.githubRepoId,
+        githubNumber: parsed.number,
+        workflowInstanceId: reportInstance.id,
+      });
+
+      return { jobId: reportInstance.id };
+    }),
+
+  reportJobStatus: protectedProcedure
+    .input(z.object({ jobId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const reportInstance = await ctx.env.REPORT_WORKFLOW.get(input.jobId);
+      const status = await reportInstance.status();
+
+      if (status.status !== "complete") {
+        return { status: status.status, reportId: null };
       }
 
-      const reportData: import("../workflows/report-workflow").ReportWorkflowOutput = z
+      const output = z
         .object({
-          output: z.object({
-            repo: z.object({
+          repo: z.object({
+            id: z.number(),
+            full_name: z.string(),
+          }),
+          issue: z.object({
+            id: z.number(),
+            number: z.number(),
+            user: z.object({
               id: z.number(),
-              full_name: z.string(),
-              owner: z.object({
-                id: z.number(),
-                login: z.string(),
-                type: z.string(),
-              }),
+              login: z.string(),
+              type: z.string().optional(),
             }),
-            issue: z.object({
-              id: z.number(),
-              number: z.number(),
-              user: z.object({
-                id: z.number(),
-                login: z.string(),
-                type: z.string().optional(),
-              }),
-              pull_request: z
-                .object({
-                  url: z.string().optional(),
-                })
-                .optional(),
-              html_url: z.string(),
-            }),
+            pull_request: z
+              .object({
+                url: z.string().optional(),
+              })
+              .optional(),
+            html_url: z.string(),
           }),
         })
-        .parse(reportStatus).output;
+        .parse(status.output);
 
-      if (parsed.kind === "pull" && !reportData.issue.pull_request) {
+      const actorType = output.issue.user.type?.toLowerCase();
+      const normalizedActorType: GithubActorType =
+        actorType === "organization" || actorType === "user" || actorType === "bot"
+          ? actorType
+          : "unknown";
+
+      await db
+        .insert(shameActor)
+        .values({
+          githubUserId: output.issue.user.id,
+          login: output.issue.user.login,
+          profileUrl: `https://github.com/${output.issue.user.login}`,
+          type: normalizedActorType,
+        })
+        .onConflictDoUpdate({
+          target: shameActor.githubUserId,
+          set: {
+            login: output.issue.user.login,
+            type: normalizedActorType,
+            updatedAt: new Date(),
+          },
+        });
+
+      await db
+        .insert(shameActorLogin)
+        .values({
+          actorGithubUserId: output.issue.user.id,
+          login: output.issue.user.login,
+        })
+        .onConflictDoUpdate({
+          target: [shameActorLogin.actorGithubUserId, shameActorLogin.login],
+          set: { lastSeenAt: new Date() },
+        });
+
+      const existing = await db.query.shameEvidence.findFirst({
+        where: eq(shameEvidence.workflowInstanceId, input.jobId),
+      });
+
+      if (!existing) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "URL is not a pull request",
+          code: "NOT_FOUND",
+          message: "Report evidence not found",
         });
       }
 
-      if (parsed.kind === "issue" && reportData.issue.pull_request) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "URL is not an issue",
-        });
-      }
+      const scope = existing.githubRepoId ? "repo" : "org";
+      const scopeGithubId = existing.githubRepoId ?? output.repo.id;
+      const scopeLogin = output.repo.full_name;
+      const reportId = `${scope}:${scopeGithubId}:${output.issue.user.id}`;
 
-      if (reportData.repo.id !== installationRepo.githubRepoId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Repository access denied",
-        });
-      }
-
-      const repoStatsKey = `repo:stats:${repoFullName}`;
-      const commitCountKey = `repo:commits:${repoFullName}:${reportData.issue.user.login}`;
+      const repoStatsKey = `repo:stats:${output.repo.full_name.toLowerCase()}`;
+      const commitCountKey = `repo:commits:${output.repo.full_name.toLowerCase()}:${output.issue.user.login}`;
 
       const repoStatsSchema = z.object({
         stars: z.number(),
@@ -718,126 +744,28 @@ const reportRouter = router({
       let repoContributors = repoStatsCached?.contributors;
 
       if (repoStars === undefined || repoContributors === undefined) {
-        const repoStats = await userClient.request({
+        const repoStats = await createGithubClient({
+          token: githubAccount.accessToken,
+          type: "token",
+        }).request({
           method: "GET",
-          path: `/repos/${parsed.owner}/${parsed.repo}`,
+          path: `/repos/${output.repo.full_name}`,
           schema: z.object({
             stargazers_count: z.number(),
           }),
         });
 
-        const contributorsResponse = await userClient.requestWithHeaders({
-          method: "GET",
-          path: `/repos/${parsed.owner}/${parsed.repo}/contributors?per_page=1&anon=0`,
-          schema: z.array(z.unknown()),
-        });
-
-        const linkHeader = contributorsResponse.headers.get("link") ?? "";
-        const linkMatch = linkHeader.match(/&page=(\d+)>; rel="last"/);
-        const contributorCount = linkMatch ? Number(linkMatch[1]) : contributorsResponse.data.length;
-
         repoStars = repoStats.stargazers_count;
-        repoContributors = contributorCount;
+        repoContributors = 0;
 
-        await setCachedJson(
-          repoStatsKey,
-          { stars: repoStars, contributors: repoContributors },
-          { ttlSeconds: 3600 },
-        );
-      }
-
-      const permissionWorkflow = ctx.env.ENFORCEMENT_WORKFLOW;
-      const permissionInstance = await permissionWorkflow.create({
-        params: {
-          repoFullName,
-          actorLogin: viewer.login,
-          token: githubAccount.accessToken,
-        },
-      });
-      const permissionStatus = await permissionInstance.status();
-      if (permissionStatus.status !== "complete") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Permission workflow did not complete",
-        });
-      }
-
-      const permissionData: import("../workflows/enforcement-workflow").EnforcementWorkflowOutput = z
-        .object({
-          output: z.object({
-            permission: z.object({
-              permission: z.string(),
-            }),
-          }),
-        })
-        .parse(permissionStatus).output;
-
-      const isMaintainer = ["admin", "maintain"].includes(permissionData.permission.permission);
-      if (!isMaintainer) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Maintainer permissions required",
-        });
+        await setCachedJson(repoStatsKey, { stars: repoStars, contributors: repoContributors }, { ttlSeconds: 3600 });
       }
 
       const commitCount = await getCachedJson(commitCountKey, z.object({ count: z.number() })).catch(
         () => null,
       );
 
-      let actorCommitCount = commitCount?.count;
-      if (actorCommitCount === undefined) {
-        const commitResponse = await userClient.requestWithHeaders({
-          method: "GET",
-          path: `/repos/${parsed.owner}/${parsed.repo}/commits?author=${reportData.issue.user.login}&per_page=1`,
-          schema: z.array(z.unknown()),
-        });
-
-        const commitLinkHeader = commitResponse.headers.get("link") ?? "";
-        const commitMatch = commitLinkHeader.match(/&page=(\d+)>; rel="last"/);
-        const commitCountValue = commitMatch ? Number(commitMatch[1]) : commitResponse.data.length;
-        actorCommitCount = commitCountValue;
-
-        await setCachedJson(commitCountKey, { count: actorCommitCount }, { ttlSeconds: 600 });
-      }
-
-      const actorType = reportData.issue.user.type?.toLowerCase();
-      const normalizedActorType: GithubActorType =
-        actorType === "organization" || actorType === "user" || actorType === "bot"
-          ? actorType
-          : "unknown";
-
-      await db
-        .insert(shameActor)
-        .values({
-          githubUserId: reportData.issue.user.id,
-          login: reportData.issue.user.login,
-          profileUrl: `https://github.com/${reportData.issue.user.login}`,
-          type: normalizedActorType,
-        })
-        .onConflictDoUpdate({
-          target: shameActor.githubUserId,
-          set: {
-            login: reportData.issue.user.login,
-            type: normalizedActorType,
-            updatedAt: new Date(),
-          },
-        });
-
-      await db
-        .insert(shameActorLogin)
-        .values({
-          actorGithubUserId: reportData.issue.user.id,
-          login: reportData.issue.user.login,
-        })
-        .onConflictDoUpdate({
-          target: [shameActorLogin.actorGithubUserId, shameActorLogin.login],
-          set: { lastSeenAt: new Date() },
-        });
-
-      const scope = input.githubRepoId ? "repo" : "org";
-      const scopeGithubId = input.githubRepoId ?? installation.accountId;
-      const scopeLogin = input.githubRepoId ? reportData.repo.full_name : installation.accountLogin;
-      const reportId = `${scope}:${scopeGithubId}:${reportData.issue.user.id}`;
+      let actorCommitCount = commitCount?.count ?? 0;
 
       const [report] = await db
         .insert(shameReport)
@@ -846,45 +774,39 @@ const reportRouter = router({
           scope,
           scopeGithubId,
           scopeLogin,
-          actorGithubUserId: reportData.issue.user.id,
-          actorLogin: reportData.issue.user.login,
-          action: input.action,
-          reasonCode: input.reasonCode,
-          reasonText: input.reasonText,
+          actorGithubUserId: output.issue.user.id,
+          actorLogin: output.issue.user.login,
+          action: "flag",
+          reasonCode: "ai_spam",
+          visibility: "public",
           repoStars,
           repoContributors,
-          reporterIsMaintainer: isMaintainer,
+          reporterIsMaintainer: true,
           actorCommitCount,
-          visibility: "public",
           createdByUserId: user.id,
         })
         .onConflictDoUpdate({
           target: [shameReport.scope, shameReport.scopeGithubId, shameReport.actorGithubUserId],
           set: {
-            action: input.action,
-            reasonCode: input.reasonCode,
-            reasonText: input.reasonText,
-            actorLogin: reportData.issue.user.login,
+            actorLogin: output.issue.user.login,
             scopeLogin,
             repoStars,
             repoContributors,
-            reporterIsMaintainer: isMaintainer,
+            reporterIsMaintainer: true,
             actorCommitCount,
             updatedAt: new Date(),
           },
         })
         .returning();
 
-      await db.insert(shameEvidence).values({
-        reportId,
-        kind: parsed.kind === "pull" ? "pr" : "issue",
-        url: reportData.issue.html_url,
-        githubRepoId: reportData.repo.id,
-        githubNumber: reportData.issue.number,
-      });
+      await db
+        .update(shameEvidence)
+        .set({ reportId })
+        .where(eq(shameEvidence.workflowInstanceId, input.jobId));
 
-      return report;
+      return { status: status.status, reportId: report?.id ?? null };
     }),
+
 
 });
 

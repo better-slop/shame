@@ -148,11 +148,13 @@ export const shameEvidence = sqliteTable(
     githubNumber: integer("github_number"),
     githubCommentId: integer("github_comment_id"),
     githubNodeId: text("github_node_id"),
+    workflowInstanceId: text("workflow_instance_id"),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).default(msNow).notNull(),
   },
   (table) => [
     index("shame_evidence_report_idx").on(table.reportId),
     index("shame_evidence_repo_idx").on(table.githubRepoId),
+    index("shame_evidence_workflow_idx").on(table.workflowInstanceId),
   ],
 );
 

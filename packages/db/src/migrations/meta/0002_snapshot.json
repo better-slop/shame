@@ -848,6 +848,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "workflow_instance_id": {
+          "name": "workflow_instance_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "integer",
@@ -866,6 +873,11 @@
         "shame_evidence_repo_idx": {
           "name": "shame_evidence_repo_idx",
           "columns": ["github_repo_id"],
+          "isUnique": false
+        },
+        "shame_evidence_workflow_idx": {
+          "name": "shame_evidence_workflow_idx",
+          "columns": ["workflow_instance_id"],
           "isUnique": false
         }
       },
