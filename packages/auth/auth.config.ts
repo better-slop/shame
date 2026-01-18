@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
-import { organization } from "better-auth/plugins";
+import { admin, organization } from "better-auth/plugins";
 
 const client = createClient({ url: "file:./temp.db" });
 const db = drizzle({ client });
@@ -14,6 +14,6 @@ export const auth = betterAuth({
   secret: "placeholder-secret-for-cli-only",
   plugins: [
     organization(),
-
+    admin()
   ]
 });
