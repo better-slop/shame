@@ -15,6 +15,7 @@ type ReportWorkflowEnv = Env & {
 type ReportWorkflowParams = {
   githubUrl: string;
   installationId: number;
+  reporterAccountId: number;
 };
 
 const issueSchema = z.object({
@@ -43,9 +44,14 @@ const repoSchema = z.object({
   }),
 });
 
+const permissionSchema = z.object({
+  permission: z.string(),
+});
+
 export type ReportWorkflowOutput = {
   repo: z.infer<typeof repoSchema>;
   issue: z.infer<typeof issueSchema>;
+  permission: z.infer<typeof permissionSchema>;
 };
 
 export class ReportWorkflow extends WorkflowEntrypoint<ReportWorkflowEnv, ReportWorkflowParams> {
@@ -94,9 +100,23 @@ export class ReportWorkflow extends WorkflowEntrypoint<ReportWorkflowEnv, Report
       return data;
     });
 
+    const permission = await step.do("check permission", async () => {
+      const permissionKey = `perm:${repo.full_name}:${event.payload.reporterAccountId}`.toLowerCase();
+      const cached = await getCachedJson(permissionKey, permissionSchema, this.env.GITHUB_CACHE);
+      if (cached) return cached;
+      const data = await appClient.request({
+        method: "GET",
+        path: `/repositories/${repo.id}/collaborators/${event.payload.reporterAccountId}/permission`,
+        schema: permissionSchema,
+      });
+      await setCachedJson(permissionKey, data, { ttlSeconds: 120 }, this.env.GITHUB_CACHE);
+      return data;
+    });
+
     return {
       repo,
       issue,
+      permission,
     } satisfies ReportWorkflowOutput;
   }
 }

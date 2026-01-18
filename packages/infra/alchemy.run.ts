@@ -4,7 +4,7 @@ import { GitHubSecret, RepositoryEnvironment } from "alchemy/github";
 import { CloudflareStateStore } from "alchemy/state";
 import { config } from "dotenv";
 
-const stage = process.env.STAGE ?? process.env.USER;
+const stage = process.env.STAGE ?? process.env.USER ?? "dev";
 
 // Load stage-specific env first (higher priority), then base .env
 if (stage === "dev" || stage === "prod") {
@@ -78,6 +78,10 @@ const githubCache = await KVNamespace("github-cache", {
   title: `github-cache-${stage ?? "local"}`,
 });
 
+const workflowRuns = await KVNamespace("workflow-runs", {
+  title: `workflow-runs-${stage ?? "local"}`,
+});
+
 const reportWorkflow = Workflow("report-workflow", {
   className: "ReportWorkflow",
   workflowName: "report-workflow",
@@ -112,9 +116,11 @@ export const server = await Worker("server", {
     CORS_ORIGIN: corsOrigin,
     BETTER_AUTH_SECRET: betterAuthSecret,
     BETTER_AUTH_URL: betterAuthUrl,
+    STAGE: stage ?? "dev",
     GITHUB_CLIENT_ID: githubClientId,
     GITHUB_CLIENT_SECRET: githubClientSecret,
     GITHUB_CACHE: githubCache,
+    WORKFLOW_RUNS: workflowRuns,
     REPORT_WORKFLOW: reportWorkflow,
     ENFORCEMENT_WORKFLOW: enforcementWorkflow,
     ...(githubWebhookSecret && { GITHUB_WEBHOOK_SECRET: githubWebhookSecret }),

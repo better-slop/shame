@@ -5,7 +5,11 @@ import { z } from "zod";
 import { db } from "@bs-shame/db";
 import { account } from "@bs-shame/db/schema/auth";
 import { githubInstallation, githubInstallationRepo } from "@bs-shame/db/schema/github";
-import type { ShameEvidenceKind, ShameReasonCode } from "@bs-shame/db/schema/shame";
+import type {
+  GithubActorType,
+  ShameEvidenceKind,
+  ShameReasonCode,
+} from "@bs-shame/db/schema/shame";
 import {
   shameActor,
   shameActorLogin,
@@ -17,8 +21,10 @@ import {
 } from "@bs-shame/db/schema/shame";
 import { env } from "@bs-shame/env/server";
 
+import { getCachedJson } from "../github/cache";
 import { parseGithubUrl } from "../github/parse-github-url";
 import { protectedProcedure, publicProcedure, router } from "../index";
+import { getWorkflowRun, updateWorkflowRun } from "../workflows/run-tracking";
 import { computeActorScore, type ReportWithMeta } from "../scoring/shame-score";
 import {
   type EffectivePolicy,
@@ -614,15 +620,14 @@ const reportRouter = router({
         });
       }
 
-      const user = ctx.session.user;
       const githubAccount = await db.query.account.findFirst({
-        where: and(eq(account.userId, user.id), eq(account.providerId, "github")),
+        where: and(eq(account.userId, ctx.session.user.id), eq(account.providerId, "github")),
       });
 
-      if (!githubAccount?.accessToken) {
+      if (!githubAccount) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "GitHub access token missing",
+          message: "GitHub account not linked",
         });
       }
 
@@ -631,8 +636,24 @@ const reportRouter = router({
         params: {
           githubUrl: input.githubUrl,
           installationId: input.installationId,
+          reporterAccountId: Number(githubAccount.accountId),
         },
       });
+
+      const now = new Date().toISOString();
+      await updateWorkflowRun(
+        reportInstance.id,
+        {
+          type: "report",
+          status: "queued",
+          createdAt: now,
+          updatedAt: now,
+          action: input.action,
+          reasonCode: input.reasonCode,
+          reasonText: input.reasonText ?? undefined,
+        },
+        ctx.env.WORKFLOW_RUNS,
+      );
 
       await db.insert(shameEvidence).values({
         reportId: `job:${reportInstance.id}`,
@@ -653,6 +674,14 @@ const reportRouter = router({
       const status = await reportInstance.status();
 
       if (status.status !== "complete") {
+        await updateWorkflowRun(
+          input.jobId,
+          {
+            type: "report",
+            status: status.status,
+          },
+          ctx.env.WORKFLOW_RUNS,
+        );
         return { status: status.status, reportId: null };
       }
 
@@ -676,6 +705,9 @@ const reportRouter = router({
               })
               .optional(),
             html_url: z.string(),
+          }),
+          permission: z.object({
+            permission: z.string(),
           }),
         })
         .parse(status.output);
@@ -728,6 +760,24 @@ const reportRouter = router({
       const scope = existing.githubRepoId ? "repo" : "org";
       const scopeGithubId = existing.githubRepoId ?? output.repo.id;
       const scopeLogin = output.repo.full_name;
+
+      const permission = output.permission.permission.toLowerCase();
+      const reporterIsMaintainer = permission === "admin" || permission === "maintain";
+
+      if (!reporterIsMaintainer) {
+        await updateWorkflowRun(
+          input.jobId,
+          {
+            type: "report",
+            status: "errored",
+          },
+          ctx.env.WORKFLOW_RUNS,
+        );
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Maintainer permission required",
+        });
+      }
       const reportId = `${scope}:${scopeGithubId}:${output.issue.user.id}`;
 
       const repoStatsKey = `repo:stats:${output.repo.full_name.toLowerCase()}`;
@@ -744,28 +794,22 @@ const reportRouter = router({
       let repoContributors = repoStatsCached?.contributors;
 
       if (repoStars === undefined || repoContributors === undefined) {
-        const repoStats = await createGithubClient({
-          token: githubAccount.accessToken,
-          type: "token",
-        }).request({
-          method: "GET",
-          path: `/repos/${output.repo.full_name}`,
-          schema: z.object({
-            stargazers_count: z.number(),
-          }),
-        });
-
-        repoStars = repoStats.stargazers_count;
+        repoStars = 0;
         repoContributors = 0;
-
-        await setCachedJson(repoStatsKey, { stars: repoStars, contributors: repoContributors }, { ttlSeconds: 3600 });
       }
 
       const commitCount = await getCachedJson(commitCountKey, z.object({ count: z.number() })).catch(
         () => null,
       );
 
-      let actorCommitCount = commitCount?.count ?? 0;
+      const actorCommitCount = commitCount?.count ?? 0;
+
+      const runMetadata = await getWorkflowRun(input.jobId, ctx.env.WORKFLOW_RUNS);
+      const evidenceMeta = {
+        action: runMetadata?.action ?? "flag",
+        reasonCode: runMetadata?.reasonCode ?? "ai_spam",
+        reasonText: runMetadata?.reasonText ?? null,
+      };
 
       const [report] = await db
         .insert(shameReport)
@@ -776,23 +820,27 @@ const reportRouter = router({
           scopeLogin,
           actorGithubUserId: output.issue.user.id,
           actorLogin: output.issue.user.login,
-          action: "flag",
-          reasonCode: "ai_spam",
+          action: evidenceMeta.action,
+          reasonCode: evidenceMeta.reasonCode,
+          reasonText: evidenceMeta.reasonText,
           visibility: "public",
           repoStars,
           repoContributors,
-          reporterIsMaintainer: true,
+          reporterIsMaintainer,
           actorCommitCount,
-          createdByUserId: user.id,
+          createdByUserId: ctx.session.user.id,
         })
         .onConflictDoUpdate({
           target: [shameReport.scope, shameReport.scopeGithubId, shameReport.actorGithubUserId],
           set: {
             actorLogin: output.issue.user.login,
             scopeLogin,
+            action: evidenceMeta.action,
+            reasonCode: evidenceMeta.reasonCode,
+            reasonText: evidenceMeta.reasonText,
             repoStars,
             repoContributors,
-            reporterIsMaintainer: true,
+            reporterIsMaintainer,
             actorCommitCount,
             updatedAt: new Date(),
           },
@@ -803,6 +851,16 @@ const reportRouter = router({
         .update(shameEvidence)
         .set({ reportId })
         .where(eq(shameEvidence.workflowInstanceId, input.jobId));
+
+      await updateWorkflowRun(
+        input.jobId,
+        {
+          type: "report",
+          status: "complete",
+          reportId: report?.id ?? undefined,
+        },
+        ctx.env.WORKFLOW_RUNS,
+      );
 
       return { status: status.status, reportId: report?.id ?? null };
     }),

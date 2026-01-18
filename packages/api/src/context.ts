@@ -1,5 +1,4 @@
 import { auth } from "@bs-shame/auth";
-import { auth } from "@bs-shame/auth";
 import { env } from "@bs-shame/env/server";
 import { getTestSessionFromHeaders } from "./test-session";
 
