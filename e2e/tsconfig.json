@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["@playwright/test"],
+    "noImplicitAny": false,
+    "moduleResolution": "bundler"
+  },
+  "include": ["./tests/**/*.ts", "./playwright.config.ts"]
+}
