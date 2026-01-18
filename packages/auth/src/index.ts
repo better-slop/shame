@@ -3,6 +3,7 @@ import * as schema from "@bs-shame/db/schema/auth";
 import { env } from "@bs-shame/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { organization } from "better-auth/plugins";
 
 const isShameBot = new URL(env.BETTER_AUTH_URL).hostname.endsWith("shame.bot");
 
@@ -24,6 +25,10 @@ export const auth = betterAuth({
   account: {
     storeStateStrategy: "cookie",
   },
+  plugins: [
+    organization(),
+  ]
+
   // uncomment cookieCache setting when ready to deploy to Cloudflare using *.workers.dev domains
   // session: {
   //   cookieCache: {
