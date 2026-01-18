@@ -9,6 +9,7 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { toast } from "sonner";
 
+import { getTestHeaders } from "./lib/test-headers";
 import Loader from "./components/loader";
 import { routeTree } from "./routeTree.gen";
 import { TRPCProvider } from "./utils/trpc";
@@ -32,9 +33,15 @@ const trpcClient = createTRPCClient<AppRouter>({
     httpBatchLink({
       url: `${env.VITE_SERVER_URL}/trpc`,
       fetch(url, options) {
+        const headers = new Headers(options?.headers ?? {});
+        const testHeaders = getTestHeaders();
+        if (testHeaders["x-test-user"]) {
+          headers.set("x-test-user", testHeaders["x-test-user"]);
+        }
         return fetch(url, {
           ...options,
           credentials: "include",
+          headers,
         });
       },
     }),

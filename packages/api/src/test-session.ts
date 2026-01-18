@@ -1,5 +1,4 @@
 import { and, eq } from "drizzle-orm";
-
 import { db } from "@bs-shame/db";
 import { account, user } from "@bs-shame/db/schema/auth";
 import { githubInstallation, githubInstallationRepo } from "@bs-shame/db/schema/github";
