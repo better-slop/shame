@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { ScopePicker } from "@/components/scope-picker";
 import { useTheme, type Theme } from "@/components/theme-switcher";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { authClient } from "@/lib/auth-client";
 import {
   Sidebar,
   SidebarContent,
@@ -162,6 +163,13 @@ function AppSidebar() {
 
 function TopBar({ user }: { user?: User | null }) {
   const { theme, setTheme } = useTheme();
+  const handleSignOut = () => {
+    authClient.signOut({
+      fetchOptions: {
+        throw: false,
+      },
+    });
+  };
 
   const cycleTheme = () => {
     const order: Theme[] = ["light", "dark", "system"];
@@ -308,6 +316,7 @@ function TopBar({ user }: { user?: User | null }) {
             <div className="h-px bg-border my-1 -mx-1" />
             <button
               type="button"
+              onClick={handleSignOut}
               className="flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-destructive/10 text-shame-crimson w-full text-left transition-instant"
             >
               <svg
