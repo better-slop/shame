@@ -57,3 +57,6 @@ Domain:
 
 - https://shame.bot - on prod branch
 - https://dev.shame.bot - on tip (dev branch)
+
+## coding guidelines
+- do not ever write your own database migrations, use drizzle to generate the migrations or rely on alchemy to handle the migrations for you.
